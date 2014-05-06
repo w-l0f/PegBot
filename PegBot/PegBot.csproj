@@ -49,7 +49,7 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotFunctions.cs" />
-    <Compile Include="Program.cs" />
+    <Compile Include="PegBot.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
