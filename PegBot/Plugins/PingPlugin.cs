@@ -11,7 +11,7 @@ namespace PegBot.Plugins
     class PingPlugin : BotPlugin
     {
         public PingPlugin(IrcClient irc)
-            : base(irc, "PingPlugin")
+            : base(irc, "Ping")
         {
             irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
         }
@@ -33,7 +33,7 @@ namespace PegBot.Plugins
 
                 irc.SendMessage(SendType.Message, e.Data.Channel, "PING:" + sb.ToString());
                 if (e.Data.Message.Length >= 6)
-                    irc.SendMessage(SendType.Message, e.Data.Channel, ">>" + e.Data.Message.Substring(6));
+                    irc.SendMessage(SendType.Message, e.Data.Channel, ">> " + e.Data.Message.Substring(6).Trim());
             }
         }
 

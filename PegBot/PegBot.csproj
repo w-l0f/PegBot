@@ -49,9 +49,9 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotPlugin.cs" />
-    <Compile Include="BotFunctions.cs" />
     <Compile Include="PegBot.cs" />
     <Compile Include="Plugins\PingPlugin.cs" />
+    <Compile Include="Plugins\URLTitlePlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -32,7 +32,7 @@ namespace PegBot
             irc.AutoRetry = true;
             irc.AutoRetryDelay = 60;
 
-            Plugins = new BotPlugin[] {new PingPlugin(irc)};
+            LoadPlugins();
 
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);
@@ -47,6 +47,15 @@ namespace PegBot
             {
                 Console.WriteLine("Error on connect: " + ex.Message);
             }
+        }
+
+        private void LoadPlugins()
+        {
+            Plugins = new BotPlugin[] 
+                { 
+                    new PingPlugin(irc),
+                    new URLTitlePlugin(irc)
+                };
         }
 
         private void OnConnected(object sender, EventArgs e)
