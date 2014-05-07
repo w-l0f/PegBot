@@ -32,7 +32,7 @@ namespace PegBot
             irc.AutoRetry = true;
             irc.AutoRetryDelay = 60;
 
-            Plugins = new BotPlugin[] {new PingPlugin(irc)};
+            Plugins = new BotPlugin[] {new PingPlugin(irc), new HLTVWatcher(irc)};
 
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);

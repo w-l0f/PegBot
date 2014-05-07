@@ -40,6 +40,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,8 +50,8 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotPlugin.cs" />
-    <Compile Include="BotFunctions.cs" />
     <Compile Include="PegBot.cs" />
+    <Compile Include="Plugins\HLTVWatcher.cs" />
     <Compile Include="Plugins\PingPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

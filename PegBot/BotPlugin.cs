@@ -16,6 +16,7 @@ namespace PegBot
         {
             this.irc = irc;
             this.PluginName = PluginName;
+            System.Console.WriteLine(PluginName + " loaded");
         }
 
         public abstract string[] GetHelpCommands();
