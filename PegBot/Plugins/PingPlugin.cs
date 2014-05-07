@@ -18,7 +18,7 @@ namespace PegBot.Plugins
 
         private void OnChannelMessage(object sender, IrcEventArgs e)
         {
-            if (e.Data.Message.ToLower().StartsWith(".ping"))
+            if (e.Data.Message.ToLower().StartsWith(".ping", StringComparison.CurrentCultureIgnoreCase))
             {
                 StringBuilder sb = new StringBuilder();
                 Channel c = irc.GetChannel(e.Data.Channel);
