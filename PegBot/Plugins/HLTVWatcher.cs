@@ -36,7 +36,7 @@ namespace PegBot.Plugins
             minuteTimer = new Timer(1000 * 60);
             minuteTimer.Elapsed += new ElapsedEventHandler(updateMinute);
             minuteTimer.Enabled = true;
-            
+
             hltvTimer = new Timer(1000);
             hltvTimer.Elapsed += new ElapsedEventHandler(updateHLTV);
             hltvTimer.Enabled = true;
@@ -52,7 +52,7 @@ namespace PegBot.Plugins
             {
                 string team = message[1].Trim();
                 if (String.IsNullOrEmpty(team))
-                { 
+                {
                     irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
                     return;
                 }
@@ -71,7 +71,7 @@ namespace PegBot.Plugins
                     irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
                     return;
                 }
-                if(RemoveWatchTeam(team))
+                if (RemoveWatchTeam(team))
                     irc.SendMessage(SendType.Message, e.Data.Channel, "Unwatching " + team);
                 else
                     irc.SendMessage(SendType.Message, e.Data.Channel, "No watch for " + team);
@@ -80,24 +80,24 @@ namespace PegBot.Plugins
 
             if (message[0] == ".hltv-watchlist")
             {
-                if(IntrestingTeams.Count == 0)
+                if (IntrestingTeams.Count == 0)
                     irc.SendMessage(SendType.Message, e.Data.Channel, "Not watching any teams");
                 else
                 {
                     irc.SendMessage(SendType.Message, e.Data.Channel, "Watching teams: ");
-                    foreach(string team in IntrestingTeams)
+                    foreach (string team in IntrestingTeams)
                         irc.SendMessage(SendType.Message, e.Data.Channel, team);
                 }
             }
 
             if (message[0] == ".hltv-allmatches")
             {
-                if(UpcomingMatches.Count == 0)
+                if (UpcomingMatches.Count == 0)
                     irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
                 else
                 {
                     irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
-                    foreach(Match match in UpcomingMatches)
+                    foreach (Match match in UpcomingMatches)
                         irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
                 }
             }
@@ -164,7 +164,7 @@ namespace PegBot.Plugins
             {
                 using (Stream stream = File.Open("IntrestingChannels.txt", FileMode.Open))
                 {
-                    IntrestingTeams = (List<string>) new BinaryFormatter().Deserialize(stream);
+                    IntrestingTeams = (List<string>)new BinaryFormatter().Deserialize(stream);
                 }
             }
             catch (IOException)
@@ -185,7 +185,7 @@ namespace PegBot.Plugins
 
         private bool isIntresting(Match match)
         {
-            foreach(string intresting in IntrestingTeams)
+            foreach (string intresting in IntrestingTeams)
             {
                 if (intresting.ToLower() == match.Team1.ToLower() || intresting.ToLower() == match.Team2.ToLower())
                     return true;
@@ -196,24 +196,24 @@ namespace PegBot.Plugins
         private void updateMinute(object source, ElapsedEventArgs e)
         {
             List<Match> removeMatches = new List<Match>();
-            foreach(Match match in UpcomingMatches)
+            foreach (Match match in UpcomingMatches)
             {
-                if(!match.hasBroadcasted && isIntresting(match))
+                if (!match.hasBroadcasted && isIntresting(match))
                 {
-                    if(match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
+                    if (match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
                     {
                         //todo: 
                         //foreach(string channel in enabledchannels) 
                         //irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
                         //---
-                        irc.SendMessage(SendType.Message, "#pegbot", "Now starting " + match.ToString()); 
+                        irc.SendMessage(SendType.Message, "#pegbot", "Now starting " + match.ToString());
                         match.hasBroadcasted = true;
                     }
                 }
-                if(match.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0)
+                if (match.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0)
                     removeMatches.Add(match);
             }
-            foreach(Match remove in removeMatches)
+            foreach (Match remove in removeMatches)
                 UpcomingMatches.Remove(remove);
         }
 
@@ -232,7 +232,9 @@ namespace PegBot.Plugins
                     return;
                 string Team1 = item.Title.Text.Substring(0, vs);
                 string Team2 = item.Title.Text.Substring(vs + 4);
-                string MatchPage = item.Links[0].Uri.AbsoluteUri;
+                string MatchPage = String.Empty;
+                if (item.Links.Count > 0)
+                    MatchPage = item.Links[0].Uri.AbsoluteUri;
                 DateTimeOffset PlayDate = item.PublishDate;
                 Match newMatch = new Match(Team1, Team2, MatchPage);
                 newMatch.PlayDate = PlayDate;
@@ -275,12 +277,12 @@ namespace PegBot.Plugins
                 {
                     if (MatchPage == String.Empty && otherMatch.MatchPage == String.Empty)
                     {
-                        if((Team1 + Team2).CompareTo(otherMatch.Team1 + otherMatch.Team2) == 0)
+                        if ((Team1 + Team2).CompareTo(otherMatch.Team1 + otherMatch.Team2) == 0)
                             return 0;
                     }
                     else
                     {
-                        if(MatchPage.CompareTo(otherMatch.MatchPage) == 0)
+                        if (MatchPage.CompareTo(otherMatch.MatchPage) == 0)
                             return 0;
                     }
                     int datecmp = PlayDate.CompareTo(otherMatch.PlayDate);
@@ -293,7 +295,7 @@ namespace PegBot.Plugins
                     throw new ArgumentException("Object is not a Match-object");
             }
 
-            public string ToString()
+            public override string ToString()
             {
                 StringBuilder sb = new StringBuilder();
                 sb.Append(Team1);
