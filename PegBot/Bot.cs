@@ -32,7 +32,6 @@ namespace PegBot
             irc.AutoRetry = true;
             irc.AutoRetryDelay = 60;
 
-            Plugins = new BotPlugin[] {new PingPlugin(irc), };
             LoadPlugins();
 
             irc.OnConnected += new EventHandler(OnConnected);
@@ -88,16 +87,14 @@ namespace PegBot
         }
 
         private void PrintHelp(string destination)
-        {
-            StringBuilder sb = new StringBuilder(); 
+        { 
             foreach(BotPlugin plugin in Plugins)
             {
                 foreach(string command in plugin.GetHelpCommands())
                 {
-                    sb.Append(command);
+                    irc.SendMessage(SendType.Message, destination, command);
                 }
             }
-            irc.SendMessage(SendType.Message, destination, sb.ToString());
         }
     }
 }
