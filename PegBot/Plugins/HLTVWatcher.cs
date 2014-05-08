@@ -1,15 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using Meebey.SmartIrc4net;
-using System.Collections;
 using System.Timers;
-using System.Net;
 using System.Xml;
-using System.Xml.Serialization;
-using System.ServiceModel;
 using System.ServiceModel.Syndication;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -104,11 +98,7 @@ namespace PegBot.Plugins
 
             if (message[0] == ".hltv-match" || message[0] == ".hltv-matches")
             {
-                List<Match> matches = new List<Match>();
-                foreach (Match match in UpcomingMatches)
-                    if (isIntresting(match))
-                        matches.Add(match);
-
+                List<Match> matches = UpcomingMatches.FindAll(m => isIntresting(m));
                 if (matches.Count == 0)
                     irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
                 else
@@ -185,12 +175,7 @@ namespace PegBot.Plugins
 
         private bool isIntresting(Match match)
         {
-            foreach (string intresting in IntrestingTeams)
-            {
-                if (intresting.ToLower() == match.Team1.ToLower() || intresting.ToLower() == match.Team2.ToLower())
-                    return true;
-            }
-            return false;
+            return IntrestingTeams.FindAll(t => t.ToLower() == match.Team1.ToLower() || t.ToLower() == match.Team2.ToLower()).Count != 0 ? true : false;
         }
 
         private void updateMinute(object source, ElapsedEventArgs e)
@@ -210,11 +195,8 @@ namespace PegBot.Plugins
                         match.hasBroadcasted = true;
                     }
                 }
-                if (match.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0)
-                    removeMatches.Add(match);
             }
-            foreach (Match remove in removeMatches)
-                UpcomingMatches.Remove(remove);
+            UpcomingMatches.RemoveAll(m => m.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0);
         }
 
         private void updateHLTV(object source, ElapsedEventArgs e)
