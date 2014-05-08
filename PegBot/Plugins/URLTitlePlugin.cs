@@ -24,17 +24,20 @@ namespace PegBot.Plugins
 
         public void OnChannelMessage(object sender, IrcEventArgs e)
         {
-            if (Uri.IsWellFormedUriString(e.Data.Message, UriKind.RelativeOrAbsolute))
+            if (ChannelEnabled(e.Data.Channel))
             {
-                try
+                if (Uri.IsWellFormedUriString(e.Data.Message, UriKind.RelativeOrAbsolute))
                 {
-                    string title = GetWebPageTitle(e.Data.Message);
-                    if (!string.IsNullOrEmpty(title))
-                        irc.SendMessage(SendType.Message, e.Data.Channel, title);
-                }
-                catch
-                {
-                    //don't bother
+                    try
+                    {
+                        string title = GetWebPageTitle(e.Data.Message);
+                        if (!string.IsNullOrEmpty(title))
+                            irc.SendMessage(SendType.Message, e.Data.Channel, title);
+                    }
+                    catch
+                    {
+                        //don't bother
+                    }
                 }
             }
         }

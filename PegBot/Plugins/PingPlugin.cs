@@ -18,22 +18,25 @@ namespace PegBot.Plugins
 
         private void OnChannelMessage(object sender, IrcEventArgs e)
         {
-            if (e.Data.Message.ToLower().StartsWith(".ping", StringComparison.CurrentCultureIgnoreCase))
+            if (ChannelEnabled(e.Data.Channel) && !string.IsNullOrWhiteSpace(e.Data.Message) && e.Data.Message.Split(' ').Length > 1)
             {
-                StringBuilder sb = new StringBuilder();
-                Channel c = irc.GetChannel(e.Data.Channel);
-                foreach (DictionaryEntry user in c.Users)
+                if (e.Data.Message.ToLower().StartsWith(".ping ", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    //skip self
-                    if (((string)user.Key) == irc.Nickname)
-                        continue;
-                    sb.Append(" ");
-                    sb.Append(user.Key);
-                }
+                    StringBuilder sb = new StringBuilder();
+                    Channel c = irc.GetChannel(e.Data.Channel);
+                    foreach (DictionaryEntry user in c.Users)
+                    {
+                        //skip self
+                        if (((string)user.Key) == irc.Nickname)
+                            continue;
+                        sb.Append(" ");
+                        sb.Append(user.Key);
+                    }
 
-                irc.SendMessage(SendType.Message, e.Data.Channel, "PING:" + sb.ToString());
-                if (e.Data.Message.Length >= 6)
-                    irc.SendMessage(SendType.Message, e.Data.Channel, ">> " + e.Data.Message.Substring(6).Trim());
+                    irc.SendMessage(SendType.Message, e.Data.Channel, "PING:" + sb.ToString());
+                    if (e.Data.Message.Length >= 6)
+                        irc.SendMessage(SendType.Message, e.Data.Channel, ">> " + e.Data.Message.Substring(6).Trim());
+                }
             }
         }
 

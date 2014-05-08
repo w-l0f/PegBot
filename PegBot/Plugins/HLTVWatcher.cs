@@ -16,7 +16,7 @@ namespace PegBot.Plugins
 {
     class HLTVWatcher : BotPlugin
     {
-        private List<String> IntrestingTeams;
+        private List<String> SubscribedTeams;
         private List<Match> UpcomingMatches;
 
         private Timer minuteTimer;
@@ -24,12 +24,14 @@ namespace PegBot.Plugins
         private int updateRate = 15;
         private float updateRandomness = 0.2F;
 
+        private const string SUBSCRIBED_TEAMS_FILENAME = "HLTVWatcher_SubscribedTeams.txt";
+
         public HLTVWatcher(IrcClient irc)
-            : base(irc, "HLTV-Watcher plugin")
+            : base(irc, "HLTV-Watcher")
         {
-            IntrestingTeams = new List<string>();
+            SubscribedTeams = new List<string>();
             UpcomingMatches = new List<Match>();
-            ReadIntrestingTeams();
+            ReadSubscribedTeams();
 
             minuteTimer = new Timer(1000 * 60);
             minuteTimer.Elapsed += new ElapsedEventHandler(updateMinute);
@@ -44,107 +46,110 @@ namespace PegBot.Plugins
 
         private void OnChannelMessage(object sender, IrcEventArgs e)
         {
-            string[] message = e.Data.Message.Split(new char[] { ' ' }, 2);
-
-            if (message[0] == ".hltv-watch")
+            if (ChannelEnabled(e.Data.Channel))
             {
-                string team = message[1].Trim();
-                if (String.IsNullOrEmpty(team))
+                string[] message = e.Data.Message.Split(new char[] { ' ' }, 2);
+
+                if (message[0] == ".hltv-watch")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
+                    string team = message[1].Trim();
+                    if (String.IsNullOrEmpty(team))
+                    {
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
+                        return;
+                    }
+                    if (AddWatchTeam(team))
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Now watching " + team);
+                    else
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Already watching " + team);
                     return;
                 }
-                if (AddWatchTeam(team))
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Now watching " + team);
-                else
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Already watching " + team);
-                return;
-            }
 
-            if (message[0] == ".hltv-unwatch")
-            {
-                string team = message[1].Trim();
-                if (String.IsNullOrEmpty(team))
+                if (message[0] == ".hltv-unwatch")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
+                    string team = message[1].Trim();
+                    if (String.IsNullOrEmpty(team))
+                    {
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
+                        return;
+                    }
+                    if (RemoveWatchTeam(team))
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Unwatching " + team);
+                    else
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "No watch for " + team);
                     return;
                 }
-                if (RemoveWatchTeam(team))
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Unwatching " + team);
-                else
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "No watch for " + team);
-                return;
-            }
 
-            if (message[0] == ".hltv-watchlist")
-            {
-                if (IntrestingTeams.Count == 0)
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Not watching any teams");
-                else
+                if (message[0] == ".hltv-watchlist")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Watching teams: ");
-                    foreach (string team in IntrestingTeams)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, team);
+                    if (SubscribedTeams.Count == 0)
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Not watching any teams");
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Watching teams: ");
+                        foreach (string team in SubscribedTeams)
+                            irc.SendMessage(SendType.Message, e.Data.Channel, team);
+                    }
                 }
-            }
 
-            if (message[0] == ".hltv-allmatches")
-            {
-                if (UpcomingMatches.Count == 0)
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
-                else
+                if (message[0] == ".hltv-allmatches")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
-                    foreach (Match match in UpcomingMatches)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+                    if (UpcomingMatches.Count == 0)
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
+                        foreach (Match match in UpcomingMatches)
+                            irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+                    }
                 }
-            }
 
-            if (message[0] == ".hltv-match" || message[0] == ".hltv-matches")
-            {
-                List<Match> matches = UpcomingMatches.FindAll(m => isIntresting(m));
-                if (matches.Count == 0)
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
-                else
+                if (message[0] == ".hltv-match" || message[0] == ".hltv-matches")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
-                    foreach (Match match in matches)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+                    List<Match> matches = UpcomingMatches.FindAll(m => isSubscribed(m));
+                    if (matches.Count == 0)
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
+                    else
+                    {
+                        irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
+                        foreach (Match match in matches)
+                            irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+                    }
                 }
-            }
 
-            if (message[0] == ".hltv-update")
-            {
-                irc.SendMessage(SendType.Message, e.Data.Channel, "Updating...");
-                updateHLTV(null, null);
+                if (message[0] == ".hltv-update")
+                {
+                    irc.SendMessage(SendType.Message, e.Data.Channel, "Updating...");
+                    updateHLTV(null, null);
+                }
             }
         }
 
         private bool AddWatchTeam(string team)
         {
-            if (IntrestingTeams.Contains(team))
+            if (SubscribedTeams.Contains(team))
                 return false;
-            IntrestingTeams.Add(team);
-            SaveIntrestingTeams();
+            SubscribedTeams.Add(team);
+            SaveSubscribedTeams();
             return true;
         }
 
         private bool RemoveWatchTeam(string team)
         {
-            if (!IntrestingTeams.Contains(team))
+            if (!SubscribedTeams.Contains(team))
                 return false;
-            IntrestingTeams.Remove(team);
-            SaveIntrestingTeams();
+            SubscribedTeams.Remove(team);
+            SaveSubscribedTeams();
             return true;
         }
 
-        private void SaveIntrestingTeams()
+        private void SaveSubscribedTeams()
         {
             try
             {
-                using (Stream stream = File.Open("IntrestingChannels.txt", FileMode.Create))
+                using (Stream stream = File.Open(SUBSCRIBED_TEAMS_FILENAME, FileMode.Create))
                 {
-                    new BinaryFormatter().Serialize(stream, IntrestingTeams);
+                    new BinaryFormatter().Serialize(stream, SubscribedTeams);
                 }
             }
             catch (IOException)
@@ -152,17 +157,18 @@ namespace PegBot.Plugins
             }
         }
 
-        private void ReadIntrestingTeams()
+        private void ReadSubscribedTeams()
         {
             try
             {
-                using (Stream stream = File.Open("IntrestingChannels.txt", FileMode.Open))
+                using (Stream stream = File.Open(SUBSCRIBED_TEAMS_FILENAME, FileMode.Open))
                 {
-                    IntrestingTeams = (List<string>)new BinaryFormatter().Deserialize(stream);
+                    SubscribedTeams = (List<string>)new BinaryFormatter().Deserialize(stream);
                 }
             }
             catch (IOException)
             {
+
             }
         }
 
@@ -177,9 +183,9 @@ namespace PegBot.Plugins
             return commands;
         }
 
-        private bool isIntresting(Match match)
+        private bool isSubscribed(Match match)
         {
-            return IntrestingTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || IntrestingTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase);
+            return SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase);
         }
 
         private void updateMinute(object source, ElapsedEventArgs e)
@@ -187,15 +193,15 @@ namespace PegBot.Plugins
             List<Match> removeMatches = new List<Match>();
             foreach (Match match in UpcomingMatches)
             {
-                if (!match.hasBroadcasted && isIntresting(match))
+                if (!match.hasBroadcasted && isSubscribed(match))
                 {
                     if (match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
                     {
-                        //todo: 
-                        //foreach(string channel in enabledchannels) 
-                        //irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
-                        //---
-                        irc.SendMessage(SendType.Message, "#pegbot", "Now starting " + match.ToString());
+                        //only advertise on subscribing channels
+                        foreach (string channel in EnabledChannels)
+                        {
+                            irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
+                        }
                         match.hasBroadcasted = true;
                     }
                 }
@@ -284,7 +290,7 @@ namespace PegBot.Plugins
 
             public override string ToString()
             {
-                if(String.IsNullOrEmpty(ShortUrl))
+                if (String.IsNullOrEmpty(ShortUrl))
                 {
                     using (WebClient web = new WebClient())
                     {
