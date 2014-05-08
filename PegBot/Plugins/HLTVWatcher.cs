@@ -7,6 +7,10 @@ using System.Xml;
 using System.ServiceModel.Syndication;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Linq;
+using System.Net;
+using System.Collections.Specialized;
+using System.Web.Script.Serialization;
 
 namespace PegBot.Plugins
 {
@@ -175,7 +179,7 @@ namespace PegBot.Plugins
 
         private bool isIntresting(Match match)
         {
-            return IntrestingTeams.FindAll(t => t.ToLower() == match.Team1.ToLower() || t.ToLower() == match.Team2.ToLower()).Count != 0 ? true : false;
+            return IntrestingTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || IntrestingTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase);
         }
 
         private void updateMinute(object source, ElapsedEventArgs e)
@@ -241,6 +245,7 @@ namespace PegBot.Plugins
             public readonly string MatchPage;
             public DateTimeOffset PlayDate;
             public bool hasBroadcasted;
+            public string ShortUrl;
 
             public Match(string Team1, string Team2, string MatchPage)
             {
@@ -279,14 +284,43 @@ namespace PegBot.Plugins
 
             public override string ToString()
             {
+                if(String.IsNullOrEmpty(ShortUrl))
+                {
+                    using (WebClient web = new WebClient())
+                    {
+                        try
+                        {
+                            string postdata = "{\"longUrl\": \"" + MatchPage + "\"}";
+                            web.Encoding = Encoding.UTF8;
+                            web.Headers.Add("Content-Type", "application/json");
+                            byte[] dataresp = web.UploadData("https://www.googleapis.com/urlshortener/v1/url", "POST", Encoding.UTF8.GetBytes(postdata));
+                            GoogleShort response = new JavaScriptSerializer().Deserialize<GoogleShort>(web.Encoding.GetString(dataresp));
+                            ShortUrl = response.id;
+                        }
+                        catch (Exception)
+                        {
+                        }
+                    }
+                }
+
                 StringBuilder sb = new StringBuilder();
                 sb.Append(Team1);
                 sb.Append(" vs ");
                 sb.Append(Team2);
                 sb.Append(" (");
-                sb.Append(MatchPage);
+                if (String.IsNullOrEmpty(ShortUrl))
+                    sb.Append(MatchPage);
+                else
+                    sb.Append(ShortUrl);
                 sb.Append(")");
                 return sb.ToString();
+            }
+
+            class GoogleShort
+            {
+                public string kind;
+                public string id;
+                public string longUrl;
             }
         }
     }
