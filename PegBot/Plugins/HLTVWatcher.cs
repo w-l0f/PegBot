@@ -190,20 +190,16 @@ namespace PegBot.Plugins
 
         private void updateMinute(object source, ElapsedEventArgs e)
         {
-            List<Match> removeMatches = new List<Match>();
             foreach (Match match in UpcomingMatches)
             {
-                if (!match.hasBroadcasted && isSubscribed(match))
+                if (!match.hasBroadcasted && isSubscribed(match) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
                 {
-                    if (match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
+                    //only advertise on subscribing channels
+                    foreach (string channel in EnabledChannels)
                     {
-                        //only advertise on subscribing channels
-                        foreach (string channel in EnabledChannels)
-                        {
-                            irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
-                        }
-                        match.hasBroadcasted = true;
+                        irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
                     }
+                    match.hasBroadcasted = true;
                 }
             }
             UpcomingMatches.RemoveAll(m => m.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0);
