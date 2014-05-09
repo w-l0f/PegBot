@@ -58,9 +58,8 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
                         return;
                     }
-                    if (AddWatchTeam(team))
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Now watching " + team);
-                    else
+                    
+                    if (!AddWatchTeam(team))
                         irc.SendMessage(SendType.Message, e.Data.Channel, "Already watching " + team);
                     return;
                 }
@@ -73,9 +72,7 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
                         return;
                     }
-                    if (RemoveWatchTeam(team))
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Unwatching " + team);
-                    else
+                    if (!RemoveWatchTeam(team))
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No watch for " + team);
                     return;
                 }
@@ -86,7 +83,6 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "Not watching any teams");
                     else
                     {
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Watching teams: ");
                         foreach (string team in SubscribedTeams)
                             irc.SendMessage(SendType.Message, e.Data.Channel, team);
                     }
@@ -98,7 +94,6 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
                     else
                     {
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
                         foreach (Match match in UpcomingMatches)
                             irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
                     }
@@ -111,7 +106,6 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
                     else
                     {
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Upcoming matches: ");
                         foreach (Match match in matches)
                             irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
                     }
@@ -119,7 +113,6 @@ namespace PegBot.Plugins
 
                 if (message[0] == ".hltv-update")
                 {
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "Updating...");
                     updateHLTV(null, null);
                 }
             }
@@ -139,37 +132,9 @@ namespace PegBot.Plugins
             if (!SubscribedTeams.Contains(team))
                 return false;
             SubscribedTeams.Remove(team);
+            PluginUtils.SaveObject(_EnabledChannels, SUBSCRIBED_TEAMS_FILENAME);
             SaveSubscribedTeams();
             return true;
-        }
-
-        private void SaveSubscribedTeams()
-        {
-            try
-            {
-                using (Stream stream = File.Open(SUBSCRIBED_TEAMS_FILENAME, FileMode.Create))
-                {
-                    new BinaryFormatter().Serialize(stream, SubscribedTeams);
-                }
-            }
-            catch (IOException)
-            {
-            }
-        }
-
-        private void ReadSubscribedTeams()
-        {
-            try
-            {
-                using (Stream stream = File.Open(SUBSCRIBED_TEAMS_FILENAME, FileMode.Open))
-                {
-                    SubscribedTeams = (List<string>)new BinaryFormatter().Deserialize(stream);
-                }
-            }
-            catch (IOException)
-            {
-
-            }
         }
 
         public override string[] GetHelpCommands()

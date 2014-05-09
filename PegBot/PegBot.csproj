@@ -50,6 +50,7 @@
     <Compile Include="Plugins\HLTVWatcher.cs" />
     <Compile Include="Plugins\PingPlugin.cs" />
     <Compile Include="Plugins\URLTitlePlugin.cs" />
+    <Compile Include="PluginUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
