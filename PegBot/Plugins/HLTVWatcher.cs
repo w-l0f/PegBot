@@ -29,9 +29,13 @@ namespace PegBot.Plugins
         public HLTVWatcher(IrcClient irc)
             : base(irc, "HLTV-Watcher")
         {
-            SubscribedTeams = new List<string>();
             UpcomingMatches = new List<Match>();
-            ReadSubscribedTeams();
+            SubscribedTeams = new List<string>();
+            try
+            {
+                SubscribedTeams = PluginUtils.LoadObject(SUBSCRIBED_TEAMS_FILENAME) as List<string>;
+            }
+            catch (IOException) { }
 
             minuteTimer = new Timer(1000 * 60);
             minuteTimer.Elapsed += new ElapsedEventHandler(updateMinute);
@@ -123,7 +127,7 @@ namespace PegBot.Plugins
             if (SubscribedTeams.Contains(team))
                 return false;
             SubscribedTeams.Add(team);
-            SaveSubscribedTeams();
+            PluginUtils.SaveObject(SubscribedTeams, SUBSCRIBED_TEAMS_FILENAME);
             return true;
         }
 
@@ -132,8 +136,7 @@ namespace PegBot.Plugins
             if (!SubscribedTeams.Contains(team))
                 return false;
             SubscribedTeams.Remove(team);
-            PluginUtils.SaveObject(_EnabledChannels, SUBSCRIBED_TEAMS_FILENAME);
-            SaveSubscribedTeams();
+            PluginUtils.SaveObject(SubscribedTeams, SUBSCRIBED_TEAMS_FILENAME);
             return true;
         }
 
