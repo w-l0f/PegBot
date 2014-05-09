@@ -1,7 +1,14 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PegBot", "PegBot\PegBot.csproj", "{CA2A7EBC-163C-4C0D-BDB9-AFF54C331CD9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{179D79F8-2459-4156-AC41-479BBD3B88FE} = {179D79F8-2459-4156-AC41-479BBD3B88FE}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartIrc4net", "SmartIrc4net\SmartIrc4net.csproj", "{179D79F8-2459-4156-AC41-479BBD3B88FE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,6 +20,10 @@ Global
 		{CA2A7EBC-163C-4C0D-BDB9-AFF54C331CD9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CA2A7EBC-163C-4C0D-BDB9-AFF54C331CD9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CA2A7EBC-163C-4C0D-BDB9-AFF54C331CD9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{179D79F8-2459-4156-AC41-479BBD3B88FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{179D79F8-2459-4156-AC41-479BBD3B88FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{179D79F8-2459-4156-AC41-479BBD3B88FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{179D79F8-2459-4156-AC41-479BBD3B88FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
