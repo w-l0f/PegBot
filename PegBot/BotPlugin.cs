@@ -28,7 +28,7 @@ namespace PegBot
             this.irc = irc;
             this.PluginName = PluginName;
             FILENAME_ENABLEDCHANNELS = PluginName + "-channels";
-            if(PluginName.Contains(' '))
+            if (PluginName.Contains(' '))
                 throw new ArgumentException("PluginName can't contain any spaces");
             try
             {

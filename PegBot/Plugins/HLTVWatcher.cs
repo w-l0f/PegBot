@@ -24,7 +24,7 @@ namespace PegBot.Plugins
         private int updateRate = 15;
         private float updateRandomness = 0.2F;
 
-        private const string SUBSCRIBED_TEAMS_FILENAME = "HLTVWatcher_SubscribedTeams.txt";
+        private const string SUBSCRIBED_TEAMS_FILENAME = "HLTVWatcher_SubscribedTeams";
 
         public HLTVWatcher(IrcClient irc)
             : base(irc, "HLTV-Watcher")
@@ -62,7 +62,7 @@ namespace PegBot.Plugins
                         irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
                         return;
                     }
-                    
+
                     if (!AddWatchTeam(team))
                         irc.SendMessage(SendType.Message, e.Data.Channel, "Already watching " + team);
                     return;
@@ -177,35 +177,38 @@ namespace PegBot.Plugins
         {
             int randomness = new Random().Next(-(int)(updateRate * updateRandomness * 60 * 1000), (int)(updateRate * updateRandomness * 60 * 1000));
             hltvTimer.Interval = updateRate * 60 * 1000 + randomness;
-
-            List<Match> newMatches = new List<Match>();
-            SyndicationFeed feed = SyndicationFeed.Load(XmlReader.Create("http://www.hltv.org/hltv.rss.php?pri=15"));
-
-            foreach (SyndicationItem item in feed.Items)
+            try
             {
-                int vs = item.Title.Text.IndexOf(" vs ");
-                if (vs < 1)
-                    return;
-                string Team1 = item.Title.Text.Substring(0, vs);
-                string Team2 = item.Title.Text.Substring(vs + 4);
-                string MatchPage = String.Empty;
-                if (item.Links.Count > 0)
-                    MatchPage = item.Links[0].Uri.AbsoluteUri;
-                DateTimeOffset PlayDate = item.PublishDate;
-                Match newMatch = new Match(Team1, Team2, MatchPage);
-                newMatch.PlayDate = PlayDate;
-                newMatches.Add(newMatch);
-            }
+                List<Match> newMatches = new List<Match>();
+                SyndicationFeed feed = SyndicationFeed.Load(XmlReader.Create("http://www.hltv.org/hltv.rss.php?pri=15"));
 
-            foreach (Match newMatch in newMatches)
-            {
-                Match oldmatch = UpcomingMatches.Find(p => p.CompareTo(newMatch) == 0);
-                if (oldmatch == null)
-                    UpcomingMatches.Add(newMatch);
-                else
-                    if (oldmatch.PlayDate.CompareTo(newMatch.PlayDate) != 0)
-                        oldmatch.PlayDate = newMatch.PlayDate;
+                foreach (SyndicationItem item in feed.Items)
+                {
+                    int vs = item.Title.Text.IndexOf(" vs ");
+                    if (vs < 1)
+                        return;
+                    string Team1 = item.Title.Text.Substring(0, vs);
+                    string Team2 = item.Title.Text.Substring(vs + 4);
+                    string MatchPage = String.Empty;
+                    if (item.Links.Count > 0)
+                        MatchPage = item.Links[0].Uri.AbsoluteUri;
+                    DateTimeOffset PlayDate = item.PublishDate;
+                    Match newMatch = new Match(Team1, Team2, MatchPage);
+                    newMatch.PlayDate = PlayDate;
+                    newMatches.Add(newMatch);
+                }
+
+                foreach (Match newMatch in newMatches)
+                {
+                    Match oldmatch = UpcomingMatches.Find(p => p.CompareTo(newMatch) == 0);
+                    if (oldmatch == null)
+                        UpcomingMatches.Add(newMatch);
+                    else
+                        if (oldmatch.PlayDate.CompareTo(newMatch.PlayDate) != 0)
+                            oldmatch.PlayDate = newMatch.PlayDate;
+                }
             }
+            catch (Exception) { };
         }
 
         class Match : IComparable
@@ -255,23 +258,7 @@ namespace PegBot.Plugins
             public override string ToString()
             {
                 if (String.IsNullOrEmpty(ShortUrl))
-                {
-                    using (WebClient web = new WebClient())
-                    {
-                        try
-                        {
-                            string postdata = "{\"longUrl\": \"" + MatchPage + "\"}";
-                            web.Encoding = Encoding.UTF8;
-                            web.Headers.Add("Content-Type", "application/json");
-                            byte[] dataresp = web.UploadData("https://www.googleapis.com/urlshortener/v1/url", "POST", Encoding.UTF8.GetBytes(postdata));
-                            GoogleShort response = new JavaScriptSerializer().Deserialize<GoogleShort>(web.Encoding.GetString(dataresp));
-                            ShortUrl = response.id;
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
-                }
+                    ShortUrl = PluginUtils.CreateShortUrl(MatchPage);
 
                 StringBuilder sb = new StringBuilder();
                 sb.Append(Team1);
@@ -286,12 +273,7 @@ namespace PegBot.Plugins
                 return sb.ToString();
             }
 
-            class GoogleShort
-            {
-                public string kind;
-                public string id;
-                public string longUrl;
-            }
+
         }
     }
 }
