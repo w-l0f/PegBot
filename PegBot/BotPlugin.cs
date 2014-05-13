@@ -12,7 +12,6 @@ namespace PegBot
     {
         protected IrcClient irc;
         public readonly string PluginName;
-        private readonly string FILENAME_ENABLEDCHANNELS;
 
         public BotPlugin(IrcClient irc, string PluginName)
         {
