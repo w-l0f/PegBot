@@ -256,21 +256,7 @@ namespace PegBot.Plugins
             {
                 if (String.IsNullOrEmpty(ShortUrl))
                 {
-                    using (WebClient web = new WebClient())
-                    {
-                        try
-                        {
-                            string postdata = "{\"longUrl\": \"" + MatchPage + "\"}";
-                            web.Encoding = Encoding.UTF8;
-                            web.Headers.Add("Content-Type", "application/json");
-                            byte[] dataresp = web.UploadData("https://www.googleapis.com/urlshortener/v1/url", "POST", Encoding.UTF8.GetBytes(postdata));
-                            GoogleShort response = new JavaScriptSerializer().Deserialize<GoogleShort>(web.Encoding.GetString(dataresp));
-                            ShortUrl = response.id;
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
+                    ShortUrl = PluginUtils.GetShortUrl(MatchPage);
                 }
 
                 StringBuilder sb = new StringBuilder();

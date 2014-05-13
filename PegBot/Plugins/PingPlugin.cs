@@ -18,7 +18,8 @@ namespace PegBot.Plugins
 
         private void OnChannelMessage(object sender, IrcEventArgs e)
         {
-            if (ChannelEnabled(e.Data.Channel) && !string.IsNullOrWhiteSpace(e.Data.Message) && e.Data.Message.Split(' ').Length > 1)
+            if (ChannelEnabled(e.Data.Channel) 
+                && !string.IsNullOrWhiteSpace(e.Data.Message) && e.Data.Message.Split(' ').Length > 1)
             {
                 if (e.Data.Message.ToLower().StartsWith(".ping ", StringComparison.CurrentCultureIgnoreCase))
                 {

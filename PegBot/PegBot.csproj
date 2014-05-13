@@ -46,9 +46,11 @@
   <ItemGroup>
     <Compile Include="Bot.cs" />
     <Compile Include="BotPlugin.cs" />
+    <Compile Include="BotSetting.cs" />
     <Compile Include="PegBot.cs" />
     <Compile Include="Plugins\HLTVWatcher.cs" />
     <Compile Include="Plugins\PingPlugin.cs" />
+    <Compile Include="Plugins\TwitchPlugin.cs" />
     <Compile Include="Plugins\URLTitlePlugin.cs" />
     <Compile Include="PluginUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

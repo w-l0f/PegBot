@@ -14,21 +14,18 @@ namespace PegBot
         private IrcClient irc;
         public readonly string NickName;
         public readonly string UserName;
+        public readonly string Server;
+        public static BotSetting Setting;
         private List<BotPlugin> Plugins;
-        private List<string> AutoJoinChannels;
         private const string FILENAME_AUTOJOINCHANNELS = "autojoin-channels";
 
         public Bot(string server, int port, string nickname, string username)
         {
             NickName = nickname;
             UserName = username;
+            Server = server;
 
-            AutoJoinChannels = new List<string>();
-            try
-            {
-                AutoJoinChannels = PluginUtils.LoadObject(FILENAME_AUTOJOINCHANNELS) as List<string>;
-            }
-            catch (IOException) { }
+            Setting = BotSetting.LoadBotSetting(server.Replace('.', '_') + ".xml");
 
             irc = new IrcClient();
             irc.Encoding = System.Text.Encoding.UTF8;
@@ -64,23 +61,18 @@ namespace PegBot
 
         void OnRegistered(object sender, EventArgs e)
         {
-            foreach (string channel in AutoJoinChannels)
+            foreach (string channel in Setting.GetAllActiveChannels())
                 irc.RfcJoin(channel);
         }
 
         void OnKick(object sender, KickEventArgs e)
         {
-            AutoJoinChannels.Remove(e.Channel);
-            PluginUtils.SaveObject(AutoJoinChannels, FILENAME_AUTOJOINCHANNELS);
+            Setting.RemoveActiveChannel(e.Channel);
         }
 
         void OnInvite(object sender, InviteEventArgs e)
         {
-            if(!AutoJoinChannels.Exists(c => c == e.Channel))
-            {
-                AutoJoinChannels.Add(e.Channel);
-                PluginUtils.SaveObject(AutoJoinChannels, FILENAME_AUTOJOINCHANNELS);
-            }
+            Setting.AddActiveChannel(e.Channel);
         }
 
         private void LoadPlugins()
@@ -89,7 +81,8 @@ namespace PegBot
                 { 
                     new PingPlugin(irc),
                     new URLTitlePlugin(irc),
-                    new HLTVWatcher(irc)
+                    new HLTVWatcher(irc),
+                    //new TwitchPlugin(irc)
                 };
         }
 
@@ -130,7 +123,7 @@ namespace PegBot
                 if(nick == replyDestination)
                     irc.SendMessage(SendType.Message, replyDestination, "Add #<channel> to apply onto a specific channel");
                 foreach (BotPlugin p in Plugins)
-                    if (p.ChannelEnabled(channel))
+                    if (Setting.IsPluginEnabled(p.PluginName, channel))
                         foreach (string text in p.GetHelpCommands())
                             irc.SendMessage(SendType.Message, replyDestination, text);
             }
@@ -139,7 +132,7 @@ namespace PegBot
             {
                 irc.SendMessage(SendType.Message, channel, "[X] => enabled in " + channel);
                 foreach (BotPlugin p in Plugins)
-                    irc.SendMessage(SendType.Message, replyDestination, string.Format("[{0}] {1}", p.ChannelEnabled(channel) ? 'X' : ' ', p.PluginName));
+                    irc.SendMessage(SendType.Message, replyDestination, string.Format("[{0}] {1}", Setting.IsPluginEnabled(p.PluginName, channel) ? 'X' : ' ', p.PluginName));
             }
 
             string pluginName = message.Split(' ').Last();
@@ -148,18 +141,24 @@ namespace PegBot
 
             if(message.Equals(".plugin enable", StringComparison.CurrentCultureIgnoreCase))
             {
-                if(plugin == null)
+                var user = irc.GetChannelUser(channel, nick);
+                if (plugin == null)
                     irc.SendMessage(SendType.Message, replyDestination, "Found no plugin named " + pluginName);
-                else if(plugin.PluginEnabler(true, channel, irc.GetChannelUser(channel, nick)))
+                else if (user == null || !user.IsOp)
                     irc.SendMessage(SendType.Message, replyDestination, "Only a channel operator can enable or disable plugins");
+                else
+                    Setting.SetPluginEnabled(channel, plugin.PluginName, true);
             }
 
             if (message.Equals(".plugin disable", StringComparison.CurrentCultureIgnoreCase))
             {
+                var user = irc.GetChannelUser(channel, nick);
                 if (plugin == null)
                     irc.SendMessage(SendType.Message, replyDestination, "Found no plugin named " + pluginName);
-                else if (plugin.PluginEnabler(false, channel, irc.GetChannelUser(channel, nick)))
+                else if (user == null || !user.IsOp)
                     irc.SendMessage(SendType.Message, replyDestination, "Only a channel operator can enable or disable plugins");
+                else
+                    Setting.SetPluginEnabled(channel, plugin.PluginName, false);
             }
         }
     }
