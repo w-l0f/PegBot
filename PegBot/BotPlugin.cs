@@ -12,13 +12,12 @@ namespace PegBot
     {
         protected IrcClient irc;
         public readonly string PluginName;
-        private readonly string FILENAME_ENABLEDCHANNELS;
 
         public BotPlugin(IrcClient irc, string PluginName)
         {
             this.irc = irc;
             this.PluginName = PluginName;
-            if(PluginName.Contains(' '))
+            if (PluginName.Contains(' '))
                 throw new ArgumentException("PluginName can't contain any spaces");
 
             System.Console.WriteLine(PluginName + " loaded");

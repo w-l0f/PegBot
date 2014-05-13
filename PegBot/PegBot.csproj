@@ -51,6 +51,7 @@
     <Compile Include="Plugins\HLTVWatcher.cs" />
     <Compile Include="Plugins\PingPlugin.cs" />
     <Compile Include="Plugins\TwitchPlugin.cs" />
+    <Compile Include="Plugins\RSSReader.cs" />
     <Compile Include="Plugins\URLTitlePlugin.cs" />
     <Compile Include="PluginUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

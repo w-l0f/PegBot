@@ -83,6 +83,7 @@ namespace PegBot
                     new URLTitlePlugin(irc),
                     new HLTVWatcher(irc),
                     //new TwitchPlugin(irc)
+                    new RSSReader(irc),
                 };
         }
 
@@ -104,23 +105,23 @@ namespace PegBot
         private void OnChannelMessage(object sender, IrcEventArgs e)
         {
             string message = e.Data.Message.Trim();
-            ParseChannelMessage(message, e.Data.Channel, e.Data.Nick, e.Data.Channel);
+            ParseMessage(message, e.Data.Channel, e.Data.Nick, e.Data.Channel);
         }
 
         private void OnQueryMessage(object sender, IrcEventArgs e)
         {
             string channel = e.Data.Message.Split(' ').Last();
             string message = e.Data.Message.Substring(0, e.Data.Channel.Length - channel.Length).Trim();
-            ParseChannelMessage(message, channel, e.Data.Nick, e.Data.Nick);
+            ParseMessage(message, channel, e.Data.Nick, e.Data.Nick);
         }
 
-        private void ParseChannelMessage(string message, string channel, string nick, string replyDestination)
+        private void ParseMessage(string message, string channel, string nick, string replyDestination)
         {
             if (message.Equals(".help", StringComparison.CurrentCultureIgnoreCase))
             {
                 irc.SendMessage(SendType.Message, replyDestination, ".plugin list -- List all plugins");
                 irc.SendMessage(SendType.Message, replyDestination, ".plugin <enable/disable> <plugin> -- Enable/disable plugin");
-                if(nick == replyDestination)
+                if (nick == replyDestination)
                     irc.SendMessage(SendType.Message, replyDestination, "Add #<channel> to apply onto a specific channel");
                 foreach (BotPlugin p in Plugins)
                     if (Setting.IsPluginEnabled(p.PluginName, channel))
@@ -139,7 +140,7 @@ namespace PegBot
             message = message.Substring(0, message.Length - pluginName.Length).Trim();
             BotPlugin plugin = Plugins.Find(p => p.PluginName.Equals(pluginName, StringComparison.CurrentCultureIgnoreCase));
 
-            if(message.Equals(".plugin enable", StringComparison.CurrentCultureIgnoreCase))
+            if (message.Equals(".plugin enable", StringComparison.CurrentCultureIgnoreCase))
             {
                 var user = irc.GetChannelUser(channel, nick);
                 if (plugin == null)
