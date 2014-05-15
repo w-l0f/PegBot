@@ -22,9 +22,6 @@ namespace PegBot
         {
             this.irc = irc;
             this.PluginName = PluginName;
-            if (PluginName.Contains(' '))
-                throw new ArgumentException("PluginName can't contain any spaces");
-
             SubscribedCommands = new List<BotCommandFunction>();
             irc.OnQueryMessage += OnSubscribedQuery;
             irc.OnChannelMessage += OnSubscribedChannel;
