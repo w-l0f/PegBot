@@ -16,7 +16,6 @@ namespace PegBot.Plugins
 {
     class HLTVWatcher : BotPlugin
     {
-        private List<String> SubscribedTeams;
         private List<Match> UpcomingMatches;
 
         private Timer minuteTimer;
@@ -24,18 +23,10 @@ namespace PegBot.Plugins
         private int updateRate = 15;
         private float updateRandomness = 0.2F;
 
-        private const string SUBSCRIBED_TEAMS_FILENAME = "HLTVWatcher_SubscribedTeams";
-
         public HLTVWatcher(IrcClient irc)
             : base(irc, "HLTV-Watcher")
         {
             UpcomingMatches = new List<Match>();
-            SubscribedTeams = new List<string>();
-            try
-            {
-                SubscribedTeams = PluginUtils.LoadObject(SUBSCRIBED_TEAMS_FILENAME) as List<string>;
-            }
-            catch (IOException) { }
 
             minuteTimer = new Timer(1000 * 60);
             minuteTimer.Elapsed += new ElapsedEventHandler(updateMinute);
@@ -45,129 +36,90 @@ namespace PegBot.Plugins
             hltvTimer.Elapsed += new ElapsedEventHandler(updateHLTV);
             hltvTimer.Enabled = true;
 
-            irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
+            SubscribeExact(".hltv", "Print info about plugin", OnHltv, false);
+            Subscribe(".hltv watch", "<team>", "Hilight when <team> have match", OnWatch);
+            Subscribe(".hltv unwatch", "<team>", "Remove hilight on <team>", OnUnWatch);
+            Subscribe(".hltv list", "Print list of teams watched", OnWatchlist, false);
+            Subscribe(".hltv match", "[all]", "Print upcoming matches", OnMatch, arg => String.IsNullOrEmpty(arg) || arg == "all", false);
+            Subscribe(".hltv update", "Updates upcoming matches", OnHltvUpdate);
         }
 
-        private void OnChannelMessage(object sender, IrcEventArgs e)
+        private void OnHltv(string arg, string channel, string nick, string replyTo)
         {
-            if (ChannelEnabled(e.Data.Channel))
+            irc.SendMessage(SendType.Message, replyTo, "HLTV watcher plugin" + arg);
+        }
+
+        private void OnWatch(string arg, string channel, string nick, string replyTo)
+        {
+            List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
+            if (SubscribedTeams.Contains(arg))
+                irc.SendMessage(SendType.Message, replyTo, "Already watching " + arg);
+            else
             {
-                string[] message = e.Data.Message.Split(new char[] { ' ' }, 2);
-
-                if (message[0] == ".hltv-watch")
-                {
-                    string team = message[1].Trim();
-                    if (String.IsNullOrEmpty(team))
-                    {
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
-                        return;
-                    }
-
-                    if (!AddWatchTeam(team))
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Already watching " + team);
-                    return;
-                }
-
-                if (message[0] == ".hltv-unwatch")
-                {
-                    string team = message[1].Trim();
-                    if (String.IsNullOrEmpty(team))
-                    {
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "No team specified");
-                        return;
-                    }
-                    if (!RemoveWatchTeam(team))
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "No watch for " + team);
-                    return;
-                }
-
-                if (message[0] == ".hltv-watchlist")
-                {
-                    if (SubscribedTeams.Count == 0)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "Not watching any teams");
-                    else
-                    {
-                        foreach (string team in SubscribedTeams)
-                            irc.SendMessage(SendType.Message, e.Data.Channel, team);
-                    }
-                }
-
-                if (message[0] == ".hltv-allmatches")
-                {
-                    if (UpcomingMatches.Count == 0)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
-                    else
-                    {
-                        foreach (Match match in UpcomingMatches)
-                            irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
-                    }
-                }
-
-                if (message[0] == ".hltv-match" || message[0] == ".hltv-matches")
-                {
-                    List<Match> matches = UpcomingMatches.FindAll(m => isSubscribed(m));
-                    if (matches.Count == 0)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, "No upcoming matches");
-                    else
-                    {
-                        foreach (Match match in matches)
-                            irc.SendMessage(SendType.Message, e.Data.Channel, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
-                    }
-                }
-
-                if (message[0] == ".hltv-update")
-                {
-                    updateHLTV(null, null);
-                }
+                SubscribedTeams.Add(arg);
+                SetSetting(channel, SubscribedTeams);
             }
         }
 
-        private bool AddWatchTeam(string team)
+        private void OnUnWatch(string arg, string channel, string nick, string replyTo)
         {
-            if (SubscribedTeams.Contains(team))
-                return false;
-            SubscribedTeams.Add(team);
-            PluginUtils.SaveObject(SubscribedTeams, SUBSCRIBED_TEAMS_FILENAME);
-            return true;
+            List<string> SubscribedTeams = GetSetting(channel) as List<string>;
+            if (SubscribedTeams == null || !SubscribedTeams.Remove(arg))
+                irc.SendMessage(SendType.Message, replyTo, "No watch for " + arg);
+            else
+                SetSetting(channel, SubscribedTeams);
         }
 
-        private bool RemoveWatchTeam(string team)
+        private void OnWatchlist(string arg, string channel, string nick, string replyTo)
         {
-            if (!SubscribedTeams.Contains(team))
-                return false;
-            SubscribedTeams.Remove(team);
-            PluginUtils.SaveObject(SubscribedTeams, SUBSCRIBED_TEAMS_FILENAME);
-            return true;
+            List<string> SubscribedTeams = GetSetting(channel) as List<string>;
+            if (SubscribedTeams == null || SubscribedTeams.Count == 0)
+                irc.SendMessage(SendType.Message, replyTo, "Not watching any teams");
+            else
+            {
+                foreach (string team in SubscribedTeams)
+                    irc.SendMessage(SendType.Message, replyTo, team);
+            }
+        }
+
+        private void OnMatch(string arg, string channel, string nick, string replyTo)
+        {
+            List<Match> matches = UpcomingMatches;
+            if (arg != "all")
+            {
+                List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
+                matches = UpcomingMatches.FindAll(match => SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase));
+            }
+
+            if (matches.Count == 0)
+                irc.SendMessage(SendType.Message, replyTo, "No upcoming matches");
+            else
+            {
+                foreach (Match match in matches)
+                    irc.SendMessage(SendType.Message, replyTo, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+            }
+        }
+
+        private void OnHltvUpdate(string arg, string channel, string nick, string replyTo)
+        {
+            updateHLTV(null, null);
         }
 
         public override string[] GetHelpCommands()
         {
-            String[] commands = {".hltv-watch <team> -- Hilight when <team> have match",
-                                ".hltv-unwatch <team> -- Remove hilight on <team>",
-                                ".hltv-watchlist -- Print list of teams watched",
-                                ".hltv-matches -- Print all upcoming matches",
-                                ".hltv-allmatches -- Print all upcoming matches",
-                                ".hltv-update -- Updates upcoming matches"};
+            String[] commands = { };
             return commands;
-        }
-
-        private bool isSubscribed(Match match)
-        {
-            return SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase);
         }
 
         private void updateMinute(object source, ElapsedEventArgs e)
         {
-            foreach (Match match in UpcomingMatches)
+            foreach (string channel in EnabledChannels)
             {
-                if (!match.hasBroadcasted && isSubscribed(match) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
+                List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
+                foreach (Match match in UpcomingMatches.FindAll(match => SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase)))
                 {
-                    //only advertise on subscribing channels
-                    foreach (string channel in EnabledChannels)
-                    {
+                    if (match.Broadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 && match.PlayDate.CompareTo(DateTimeOffset.Now.AddHours(-1)) <= 0)
                         irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
-                    }
-                    match.hasBroadcasted = true;
                 }
             }
             UpcomingMatches.RemoveAll(m => m.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0);
@@ -200,13 +152,14 @@ namespace PegBot.Plugins
 
                 foreach (Match newMatch in newMatches)
                 {
-                    Match oldmatch = UpcomingMatches.Find(p => p.CompareTo(newMatch) == 0);
+                    Match oldmatch = UpcomingMatches.Find(p => p.Equals(newMatch));
                     if (oldmatch == null)
                         UpcomingMatches.Add(newMatch);
                     else
                         if (oldmatch.PlayDate.CompareTo(newMatch.PlayDate) != 0)
                             oldmatch.PlayDate = newMatch.PlayDate;
                 }
+                UpcomingMatches.Sort();
             }
             catch (Exception) { };
         }
@@ -217,42 +170,55 @@ namespace PegBot.Plugins
             public readonly string Team2;
             public readonly string MatchPage;
             public DateTimeOffset PlayDate;
-            public bool hasBroadcasted;
             public string ShortUrl;
+            private List<string> broadcasted;
 
             public Match(string Team1, string Team2, string MatchPage)
             {
                 this.Team1 = Team1;
                 this.Team2 = Team2;
                 this.MatchPage = MatchPage;
-                hasBroadcasted = false;
+                broadcasted = new List<string>();
+            }
+
+            public bool Broadcast(string channel)
+            {
+                if (broadcasted.Contains(channel))
+                    return false;
+                broadcasted.Add(channel);
+                return true;
+            }
+
+            public override bool Equals(object obj)
+            {
+                if (obj == null || GetType() != obj.GetType())
+                    return false;
+                Match otherMatch = obj as Match;
+
+                if (MatchPage == String.Empty && otherMatch.MatchPage == String.Empty)
+                {
+                    if ((Team1 + Team2).Equals(otherMatch.Team1 + otherMatch.Team2))
+                        return true;
+                }
+                else
+                {
+                    if (MatchPage.Equals(otherMatch.MatchPage))
+                        return true;
+                }
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                return MatchPage.GetHashCode();
             }
 
             public int CompareTo(object obj)
             {
-                if (obj == null)
-                    return 1;
+                if (obj == null || GetType() != obj.GetType())
+                    return -1;
                 Match otherMatch = obj as Match;
-                if (otherMatch != null)
-                {
-                    if (MatchPage == String.Empty && otherMatch.MatchPage == String.Empty)
-                    {
-                        if ((Team1 + Team2).CompareTo(otherMatch.Team1 + otherMatch.Team2) == 0)
-                            return 0;
-                    }
-                    else
-                    {
-                        if (MatchPage.CompareTo(otherMatch.MatchPage) == 0)
-                            return 0;
-                    }
-                    int datecmp = PlayDate.CompareTo(otherMatch.PlayDate);
-                    if (datecmp != 0)
-                        return datecmp;
-                    else
-                        return -1;
-                }
-                else
-                    throw new ArgumentException("Object is not a Match-object");
+                return PlayDate.CompareTo(otherMatch.PlayDate);
             }
 
             public override string ToString()
@@ -272,8 +238,6 @@ namespace PegBot.Plugins
                 sb.Append(")");
                 return sb.ToString();
             }
-
-
         }
     }
 }

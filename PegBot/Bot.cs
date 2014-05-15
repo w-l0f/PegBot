@@ -17,7 +17,6 @@ namespace PegBot
         public readonly string Server;
         public static BotSetting Setting;
         private List<BotPlugin> Plugins;
-        private const string FILENAME_AUTOJOINCHANNELS = "autojoin-channels";
 
         public Bot(string server, int port, string nickname, string username)
         {
@@ -98,6 +97,7 @@ namespace PegBot
             catch (Exception ex)
             {
                 Console.WriteLine("Error: " + ex.Message);
+                Console.WriteLine(ex.StackTrace);
                 irc.Disconnect();
             }
         }

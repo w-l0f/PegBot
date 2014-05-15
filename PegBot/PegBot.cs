@@ -28,12 +28,12 @@ namespace PegBot
                 switch (args[i])
                 {
                     case "-s":
-                        server = args[i+1];
+                        server = args[i + 1];
                         i++;
                         break;
                     case "-p":
                         int p;
-                        if(int.TryParse(args[i+1], out p))
+                        if (int.TryParse(args[i + 1], out p))
                             port = p;
                         i++;
                         break;
@@ -42,7 +42,7 @@ namespace PegBot
                         i++;
                         break;
                     case "-u":
-                        username = args[i+1];
+                        username = args[i + 1];
                         i++;
                         break;
                 }
