@@ -44,10 +44,10 @@ namespace PegBot
 
             LoadPlugins();
 
-            SubscribeExact(".help", "This help message", OnHelp, false);
-            Subscribe(".plugin list", "List all plugins", OnPluginList, false);
-            Subscribe(".plugin enable", "<plugin>", "Enable plugin", OnPluginEnable);
-            Subscribe(".plugin disable", "<plugin>", "Disable plugin", OnPluginEnable);
+            RegisterExactCommand(".help", "This help message", OnHelp, false);
+            RegisterCommand(".plugin list", "List all plugins", OnPluginList, false);
+            RegisterCommand(".plugin enable", "<plugin>", "Enable plugin", OnPluginEnable);
+            RegisterCommand(".plugin disable", "<plugin>", "Disable plugin", OnPluginEnable);
 
             try
             {

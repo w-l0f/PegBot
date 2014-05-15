@@ -36,11 +36,11 @@ namespace PegBot.Plugins
             hltvTimer.Elapsed += new ElapsedEventHandler(updateHLTV);
             hltvTimer.Enabled = true;
 
-            Subscribe(".hltv watch", "<team>", "Hilight when <team> have match", OnWatch);
-            Subscribe(".hltv unwatch", "<team>", "Remove hilight on <team>", OnUnWatch);
-            Subscribe(".hltv list", "Print list of teams watched", OnWatchlist, false);
-            Subscribe(".hltv match", "[all]", "Print upcoming matches", OnMatch, arg => String.IsNullOrEmpty(arg) || arg == "all", false);
-            Subscribe(".hltv update", "Updates upcoming matches", OnHltvUpdate);
+            RegisterCommand(".hltv watch", "<team>", "Hilight when <team> have match", OnWatch);
+            RegisterCommand(".hltv unwatch", "<team>", "Remove hilight on <team>", OnUnWatch);
+            RegisterCommand(".hltv list", "Print list of teams watched", OnWatchlist, false);
+            RegisterCommand(".hltv match", "[all]", "Print upcoming matches", OnMatch, arg => String.IsNullOrEmpty(arg) || arg == "all", false);
+            RegisterCommand(".hltv update", "Updates upcoming matches", OnHltvUpdate);
         }
 
         private void OnWatch(string arg, string channel, string nick, string replyTo)

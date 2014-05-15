@@ -13,7 +13,7 @@ namespace PegBot.Plugins
         public PingPlugin(IrcClient irc)
             : base(irc, "Ping")
         {
-            Subscribe(".ping", "[msg]", "Hilights everyone in channel with specified message", OnPing, arg => true, false);
+            RegisterCommand(".ping", "[msg]", "Hilights everyone in channel with specified message", OnPing, arg => true, false);
         }
 
         private void OnPing(string arg, string channel, string nick, string replyTo)

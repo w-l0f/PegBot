@@ -16,13 +16,13 @@ namespace PegBot
         public readonly string PluginName;
 
         public delegate void Handle(string arg, string channel, string nick, string replyTo);
-        private List<BotCommandFunction> SubscribedCommands;
+        private List<BotCommandFunction> RegisteredCommands;
 
         public BotPlugin(IrcClient irc, string PluginName)
         {
             this.irc = irc;
             this.PluginName = PluginName;
-            SubscribedCommands = new List<BotCommandFunction>();
+            RegisteredCommands = new List<BotCommandFunction>();
             irc.OnQueryMessage += OnSubscribedQuery;
             irc.OnChannelMessage += OnSubscribedChannel;
             System.Console.WriteLine(PluginName + " loaded");
@@ -55,34 +55,34 @@ namespace PegBot
         {
             List<string> help = new List<string>();
             if (ChannelEnabled(channel))
-                foreach (BotCommandFunction commandFunction in SubscribedCommands)
+                foreach (BotCommandFunction commandFunction in RegisteredCommands)
                     help.Add(commandFunction.ToString());
             return help;
         }
 
-        public void SubscribeExact(string command, string description, Handle function, bool onlyOp = true)
+        public void RegisterExactCommand(string command, string description, Handle function, bool onlyOp = true)
         {
-            Subscribe(command, String.Empty, description, function, a => true, t => t.Equals(command, StringComparison.CurrentCultureIgnoreCase), onlyOp);
+            RegisterCommand(command, String.Empty, description, function, a => true, t => t.Equals(command, StringComparison.CurrentCultureIgnoreCase), onlyOp);
         }
 
-        public void Subscribe(string command, string description, Handle function, bool onlyOp = true)
+        public void RegisterCommand(string command, string description, Handle function, bool onlyOp = true)
         {
-            Subscribe(command, String.Empty, description, function, a => String.IsNullOrEmpty(a), onlyOp);
+            RegisterCommand(command, String.Empty, description, function, a => String.IsNullOrEmpty(a), onlyOp);
         }
 
-        public void Subscribe(string command, string args, string description, Handle function, bool onlyOp = true)
+        public void RegisterCommand(string command, string args, string description, Handle function, bool onlyOp = true)
         {
-            Subscribe(command, args, description, function, a => !String.IsNullOrEmpty(a), onlyOp);
+            RegisterCommand(command, args, description, function, a => !String.IsNullOrEmpty(a), onlyOp);
         }
 
-        public void Subscribe(string command, string args, string description, Handle function, Predicate<string> argCheck, bool onlyOp = true)
+        public void RegisterCommand(string command, string args, string description, Handle function, Predicate<string> argCheck, bool onlyOp = true)
         {
-            Subscribe(command, args, description, function, argCheck, t => t.StartsWith(command, StringComparison.CurrentCultureIgnoreCase) && (t.Length == command.Length || t[command.Length] == ' '), onlyOp);
+            RegisterCommand(command, args, description, function, argCheck, t => t.StartsWith(command, StringComparison.CurrentCultureIgnoreCase) && (t.Length == command.Length || t[command.Length] == ' '), onlyOp);
         }
 
-        public void Subscribe(string command, string args, string description, Handle function, Predicate<string> argCheck, Predicate<string> trigger, bool onlyOp = true)
+        public void RegisterCommand(string command, string args, string description, Handle function, Predicate<string> argCheck, Predicate<string> trigger, bool onlyOp = true)
         {
-            SubscribedCommands.Add(new BotCommandFunction(command, args, description, function, argCheck, trigger, onlyOp));
+            RegisteredCommands.Add(new BotCommandFunction(command, args, description, function, argCheck, trigger, onlyOp));
         }
 
         public void OnSubscribedQuery(object sender, IrcEventArgs e)
@@ -99,7 +99,7 @@ namespace PegBot
 
         public void OnSubscribedCommand(string message, string channel, string nick, string replyTo)
         {
-            foreach (BotCommandFunction commandFunction in SubscribedCommands.FindAll(c => c.trigger(message)))
+            foreach (BotCommandFunction commandFunction in RegisteredCommands.FindAll(c => c.trigger(message)))
             {
                 if (String.IsNullOrEmpty(channel) || !channel.StartsWith("#"))
                 {

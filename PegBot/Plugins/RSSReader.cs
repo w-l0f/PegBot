@@ -23,9 +23,9 @@ namespace PegBot.Plugins
             RSSTimer.Elapsed += RSSTimer_Elapsed;
             RSSTimer.Enabled = true;
 
-            Subscribe(".rss add", "<short-name> <rss-url>", "Add rss watcher on <rss-url>", OnAdd, arg => arg.Split(' ').Length >= 2);
-            Subscribe(".rss remove", "<short-name>", "Remove rss watcher", OnRemove);
-            Subscribe(".rss list", "Print list of rss feeds active in this channel", OnList, false);
+            RegisterCommand(".rss add", "<short-name> <rss-url>", "Add rss watcher on <rss-url>", OnAdd, arg => arg.Split(' ').Length >= 2);
+            RegisterCommand(".rss remove", "<short-name>", "Remove rss watcher", OnRemove);
+            RegisterCommand(".rss list", "Print list of rss feeds active in this channel", OnList, false);
         }
 
         private void OnAdd(string arg, string channel, string nick, string replyTo)
