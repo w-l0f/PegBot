@@ -9,16 +9,16 @@ using System.IO;
 
 namespace PegBot
 {
-    class Bot
+    class Bot : BotPlugin
     {
-        private IrcClient irc;
         public readonly string NickName;
         public readonly string UserName;
         public readonly string Server;
-        public static BotSetting Setting;
+        
         private List<BotPlugin> Plugins;
 
         public Bot(string server, int port, string nickname, string username)
+            : base(new IrcClient(), "MainPlugin")
         {
             NickName = nickname;
             UserName = username;
@@ -26,7 +26,6 @@ namespace PegBot
 
             Setting = BotSetting.LoadBotSetting(server.Replace('.', '_') + ".xml");
 
-            irc = new IrcClient();
             irc.Encoding = System.Text.Encoding.UTF8;
             irc.SendDelay = 200;
             irc.ActiveChannelSyncing = true;
@@ -39,13 +38,16 @@ namespace PegBot
             irc.AutoRetryDelay = 60;
 
             irc.OnConnected += new EventHandler(OnConnected);
-            irc.OnQueryMessage += new IrcEventHandler(OnQueryMessage);
-            irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
             irc.OnInvite += OnInvite;
             irc.OnKick += OnKick;
             irc.OnRegistered += OnRegistered;
 
             LoadPlugins();
+
+            SubscribeExact(".help", "This help message", OnHelp, false);
+            Subscribe(".plugin list", "List all plugins", OnPluginList, false);
+            Subscribe(".plugin enable", "<plugin>", "Enable plugin", OnPluginEnable);
+            Subscribe(".plugin disable", "<plugin>", "Disable plugin", OnPluginEnable);
 
             try
             {
@@ -60,18 +62,18 @@ namespace PegBot
 
         void OnRegistered(object sender, EventArgs e)
         {
-            foreach (string channel in Setting.GetAllActiveChannels())
+            foreach (string channel in EnabledChannels)
                 irc.RfcJoin(channel);
         }
 
         void OnKick(object sender, KickEventArgs e)
         {
-            Setting.RemoveActiveChannel(e.Channel);
+            Setting.SetPluginEnabled(e.Channel, PluginName, false);
         }
 
         void OnInvite(object sender, InviteEventArgs e)
         {
-            Setting.AddActiveChannel(e.Channel);
+            Setting.SetPluginEnabled(e.Channel, PluginName, true);
         }
 
         private void LoadPlugins()
@@ -102,65 +104,40 @@ namespace PegBot
             }
         }
 
-        private void OnChannelMessage(object sender, IrcEventArgs e)
+        private void OnHelp(string arg, string channel, string nick, string replyTo)
         {
-            string message = e.Data.Message.Trim();
-            ParseMessage(message, e.Data.Channel, e.Data.Nick, e.Data.Channel);
+            if (nick == replyTo)
+                irc.SendMessage(SendType.Message, replyTo, "Add #<channel> to apply onto a specific channel");
+            irc.SendMessage(SendType.Message, replyTo, ".plugin list -- List all plugins");
+            irc.SendMessage(SendType.Message, replyTo, ".plugin <enable/disable> <plugin> -- Enable/disable plugin");
+            foreach (BotPlugin p in Plugins)
+                foreach (string text in p.GetHelpCommands(channel))
+                    irc.SendMessage(SendType.Message, replyTo, text);
         }
 
-        private void OnQueryMessage(object sender, IrcEventArgs e)
+        private void OnPluginList(string arg, string channel, string nick, string replyTo)
         {
-            string channel = e.Data.Message.Split(' ').Last();
-            string message = e.Data.Message.Substring(0, e.Data.Channel.Length - channel.Length).Trim();
-            ParseMessage(message, channel, e.Data.Nick, e.Data.Nick);
+            irc.SendMessage(SendType.Message, channel, "[X] => enabled in " + channel);
+            foreach (BotPlugin p in Plugins)
+                irc.SendMessage(SendType.Message, replyTo, string.Format("[{0}] {1}", p.ChannelEnabled(channel) ? 'X' : ' ', p.PluginName));
         }
 
-        private void ParseMessage(string message, string channel, string nick, string replyDestination)
+        private void OnPluginEnable(string arg, string channel, string nick, string replyTo)
         {
-            if (message.Equals(".help", StringComparison.CurrentCultureIgnoreCase))
-            {
-                irc.SendMessage(SendType.Message, replyDestination, ".plugin list -- List all plugins");
-                irc.SendMessage(SendType.Message, replyDestination, ".plugin <enable/disable> <plugin> -- Enable/disable plugin");
-                if (nick == replyDestination)
-                    irc.SendMessage(SendType.Message, replyDestination, "Add #<channel> to apply onto a specific channel");
-                foreach (BotPlugin p in Plugins)
-                    if (Setting.IsPluginEnabled(p.PluginName, channel))
-                        foreach (string text in p.GetHelpCommands())
-                            irc.SendMessage(SendType.Message, replyDestination, text);
-            }
+            BotPlugin plugin = Plugins.Find(p => p.PluginName.Equals(arg, StringComparison.CurrentCultureIgnoreCase));
+            if(plugin == null)
+                irc.SendMessage(SendType.Message, replyTo, "Found no plugin named " + arg);
+            else
+                Setting.SetPluginEnabled(channel, plugin.PluginName, true);
+        }
 
-            if (message.Equals(".plugin list", StringComparison.CurrentCultureIgnoreCase))
-            {
-                irc.SendMessage(SendType.Message, channel, "[X] => enabled in " + channel);
-                foreach (BotPlugin p in Plugins)
-                    irc.SendMessage(SendType.Message, replyDestination, string.Format("[{0}] {1}", Setting.IsPluginEnabled(p.PluginName, channel) ? 'X' : ' ', p.PluginName));
-            }
-
-            string pluginName = message.Split(' ').Last();
-            message = message.Substring(0, message.Length - pluginName.Length).Trim();
-            BotPlugin plugin = Plugins.Find(p => p.PluginName.Equals(pluginName, StringComparison.CurrentCultureIgnoreCase));
-
-            if (message.Equals(".plugin enable", StringComparison.CurrentCultureIgnoreCase))
-            {
-                var user = irc.GetChannelUser(channel, nick);
-                if (plugin == null)
-                    irc.SendMessage(SendType.Message, replyDestination, "Found no plugin named " + pluginName);
-                else if (user == null || !user.IsOp)
-                    irc.SendMessage(SendType.Message, replyDestination, "Only a channel operator can enable or disable plugins");
-                else
-                    Setting.SetPluginEnabled(channel, plugin.PluginName, true);
-            }
-
-            if (message.Equals(".plugin disable", StringComparison.CurrentCultureIgnoreCase))
-            {
-                var user = irc.GetChannelUser(channel, nick);
-                if (plugin == null)
-                    irc.SendMessage(SendType.Message, replyDestination, "Found no plugin named " + pluginName);
-                else if (user == null || !user.IsOp)
-                    irc.SendMessage(SendType.Message, replyDestination, "Only a channel operator can enable or disable plugins");
-                else
-                    Setting.SetPluginEnabled(channel, plugin.PluginName, false);
-            }
+        private void OnPluginDisable(string arg, string channel, string nick, string replyTo)
+        {
+            BotPlugin plugin = Plugins.Find(p => p.PluginName.Equals(arg, StringComparison.CurrentCultureIgnoreCase));
+            if (plugin == null)
+                irc.SendMessage(SendType.Message, replyTo, "Found no plugin named " + arg);
+            else
+                Setting.SetPluginEnabled(channel, plugin.PluginName, false);
         }
     }
 }

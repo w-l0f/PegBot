@@ -13,38 +13,23 @@ namespace PegBot.Plugins
         public PingPlugin(IrcClient irc)
             : base(irc, "Ping")
         {
-            irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
+            Subscribe(".ping", "[msg]", "Hilights everyone in channel with specified message", OnPing, arg => true, false);
         }
 
-        private void OnChannelMessage(object sender, IrcEventArgs e)
+        private void OnPing(string arg, string channel, string nick, string replyTo)
         {
-            if (ChannelEnabled(e.Data.Channel) 
-                && !string.IsNullOrWhiteSpace(e.Data.Message) && e.Data.Message.Split(' ').Length > 1)
+            StringBuilder sb = new StringBuilder();
+            foreach (DictionaryEntry user in irc.GetChannel(channel).Users)
             {
-                if (e.Data.Message.ToLower().StartsWith(".ping ", StringComparison.CurrentCultureIgnoreCase))
-                {
-                    StringBuilder sb = new StringBuilder();
-                    Channel c = irc.GetChannel(e.Data.Channel);
-                    foreach (DictionaryEntry user in c.Users)
-                    {
-                        //skip self
-                        if (((string)user.Key) == irc.Nickname)
-                            continue;
-                        sb.Append(" ");
-                        sb.Append(user.Key);
-                    }
-
-                    irc.SendMessage(SendType.Message, e.Data.Channel, "PING:" + sb.ToString());
-                    if (e.Data.Message.Length >= 6)
-                        irc.SendMessage(SendType.Message, e.Data.Channel, ">> " + e.Data.Message.Substring(6).Trim());
-                }
+                //skip self
+                if (((string)user.Key) == irc.Nickname)
+                    continue;
+                sb.Append(" ");
+                sb.Append(user.Key);
             }
-        }
-
-        public override string[] GetHelpCommands()
-        {
-            String[] commands = { ".ping <message> -- Hilights everyone in channel with specified message" };
-            return commands;
+            irc.SendMessage(SendType.Message, channel, "PING:" + sb.ToString());
+            if(!String.IsNullOrEmpty(arg))
+                irc.SendMessage(SendType.Message, channel, ">> " + arg);
         }
     }
 }

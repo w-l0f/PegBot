@@ -14,7 +14,6 @@ namespace PegBot
     {
         public string FileName;
         public List<PluginSettings> Plugins = new List<PluginSettings>();
-        public List<string> ActiveChannels = new List<string>();
 
         public static BotSetting LoadBotSetting(string fileName)
         {
@@ -113,26 +112,6 @@ namespace PegBot
                      select yy.ChannelName;
 
             return ch.ToList();
-        }
-
-        public List<string> GetAllActiveChannels()
-        {
-            return ActiveChannels;
-        }
-
-        public void AddActiveChannel(string channel)
-        {
-            if (!ActiveChannels.Exists(c => c.Equals(channel)))
-            {
-                ActiveChannels.Add(channel);
-                SaveSettings();
-            }
-        }
-
-        public void RemoveActiveChannel(string channel)
-        {
-            if(ActiveChannels.Remove(channel))
-                SaveSettings();
         }
 
         private int GetCreatePluginSettings(out PluginSettings pluginSettings, string pluginName)

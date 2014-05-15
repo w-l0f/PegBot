@@ -23,9 +23,9 @@ namespace PegBot.Plugins
             RSSTimer.Elapsed += RSSTimer_Elapsed;
             RSSTimer.Enabled = true;
 
-            Subscribe("rss add", "<short-name> <rss-url>", "Add rss watcher on <rss-url>", OnAdd, arg => arg.Split(' ').Length >= 2);
-            Subscribe("rss remove", "<short-name>", "Remove rss watcher", OnRemove);
-            Subscribe("rss list", "Print list of rss feeds active in this channel", OnList, false);
+            Subscribe(".rss add", "<short-name> <rss-url>", "Add rss watcher on <rss-url>", OnAdd, arg => arg.Split(' ').Length >= 2);
+            Subscribe(".rss remove", "<short-name>", "Remove rss watcher", OnRemove);
+            Subscribe(".rss list", "Print list of rss feeds active in this channel", OnList, false);
         }
 
         private void OnAdd(string arg, string channel, string nick, string replyTo)
@@ -56,12 +56,6 @@ namespace PegBot.Plugins
             else
                 foreach (string text in Feeds.Keys)
                     irc.SendMessage(SendType.Message, replyTo, "rss-feed: " + text);
-        }
-
-        public override string[] GetHelpCommands()
-        {
-            String[] commands = {};
-            return commands;
         }
 
         void RSSTimer_Elapsed(object sender, ElapsedEventArgs e)

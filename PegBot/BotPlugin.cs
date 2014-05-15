@@ -10,7 +10,9 @@ namespace PegBot
 {
     abstract class BotPlugin
     {
+        protected static BotSetting Setting;
         protected IrcClient irc;
+
         public readonly string PluginName;
 
         public delegate void Handle(string arg, string channel, string nick, string replyTo);
@@ -26,7 +28,6 @@ namespace PegBot
             SubscribedCommands = new List<BotCommandFunction>();
             irc.OnQueryMessage += OnSubscribedQuery;
             irc.OnChannelMessage += OnSubscribedChannel;
-            SubscribeExact(".help", "Print this help info", OnHelp, false);
             System.Console.WriteLine(PluginName + " loaded");
         }
 
@@ -34,33 +35,32 @@ namespace PegBot
         {
             get
             {
-                return Bot.Setting.GetEnabledChannels(PluginName);
+                return Setting.GetEnabledChannels(PluginName);
             }
         }
 
         public bool ChannelEnabled(string channel)
         {
-            return Bot.Setting.IsPluginEnabled(PluginName, channel);
+            return Setting.IsPluginEnabled(PluginName, channel);
         }
 
         public object GetSetting(string channel)
         {
-            return Bot.Setting.GetPluginSetting(PluginName, channel);
+            return Setting.GetPluginSetting(PluginName, channel);
         }
 
         public void SetSetting(string channel, object setting)
         {
-            Bot.Setting.SetPluginSetting(PluginName, channel, setting);
+            Setting.SetPluginSetting(PluginName, channel, setting);
         }
 
-        public abstract string[] GetHelpCommands();
-
-        private void OnHelp(string arg, string channel, string nick, string replyTo)
+        public List<string> GetHelpCommands(string channel)
         {
-            if(ChannelEnabled(channel))
+            List<string> help = new List<string>();
+            if (ChannelEnabled(channel))
                 foreach (BotCommandFunction commandFunction in SubscribedCommands)
-                    if(commandFunction.command != ".help")
-                        irc.SendMessage(SendType.Message, replyTo, commandFunction.ToString());
+                    help.Add(commandFunction.ToString());
+            return help;
         }
 
         public void SubscribeExact(string command, string description, Handle function, bool onlyOp = true)

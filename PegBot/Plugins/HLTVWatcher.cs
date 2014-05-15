@@ -36,17 +36,11 @@ namespace PegBot.Plugins
             hltvTimer.Elapsed += new ElapsedEventHandler(updateHLTV);
             hltvTimer.Enabled = true;
 
-            SubscribeExact(".hltv", "Print info about plugin", OnHltv, false);
             Subscribe(".hltv watch", "<team>", "Hilight when <team> have match", OnWatch);
             Subscribe(".hltv unwatch", "<team>", "Remove hilight on <team>", OnUnWatch);
             Subscribe(".hltv list", "Print list of teams watched", OnWatchlist, false);
             Subscribe(".hltv match", "[all]", "Print upcoming matches", OnMatch, arg => String.IsNullOrEmpty(arg) || arg == "all", false);
             Subscribe(".hltv update", "Updates upcoming matches", OnHltvUpdate);
-        }
-
-        private void OnHltv(string arg, string channel, string nick, string replyTo)
-        {
-            irc.SendMessage(SendType.Message, replyTo, "HLTV watcher plugin" + arg);
         }
 
         private void OnWatch(string arg, string channel, string nick, string replyTo)
@@ -103,12 +97,6 @@ namespace PegBot.Plugins
         private void OnHltvUpdate(string arg, string channel, string nick, string replyTo)
         {
             updateHLTV(null, null);
-        }
-
-        public override string[] GetHelpCommands()
-        {
-            String[] commands = { };
-            return commands;
         }
 
         private void updateMinute(object source, ElapsedEventArgs e)

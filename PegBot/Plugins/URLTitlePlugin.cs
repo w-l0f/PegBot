@@ -17,11 +17,6 @@ namespace PegBot.Plugins
             irc.OnChannelMessage += new IrcEventHandler(OnChannelMessage);
         }
 
-        public override string[] GetHelpCommands()
-        {
-            return new string[] { "" };
-        }
-
         public void OnChannelMessage(object sender, IrcEventArgs e)
         {
             if (ChannelEnabled(e.Data.Channel))

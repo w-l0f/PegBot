@@ -80,7 +80,7 @@ namespace PegBot.Plugins
             return null;
         }
 
-        public override string[] GetHelpCommands()
+        public string[] GetHelpCommands()
         {
             String[] commands = { ".twitch <add/remove> <twitchchannel> -- Add or remove specified twitch channel to/from subscription list",
                                   ".twitch list -- List all currently subscribed twitch channels" };
