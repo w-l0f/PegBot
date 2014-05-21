@@ -41,9 +41,9 @@ namespace PegBot
         {
             using (WebClient web = new WebClient())
             {
+                var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
                 try
                 {
-                    var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
                     ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
                     string postdata = "{\"longUrl\": \"" + longurl + "\"}";
                     web.Encoding = Encoding.UTF8;
@@ -58,6 +58,7 @@ namespace PegBot
                     Console.WriteLine(e.Message);
                     Console.WriteLine(e.StackTrace);
                 }
+                ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             }
             return String.Empty;
         }
