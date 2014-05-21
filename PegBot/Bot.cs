@@ -85,6 +85,7 @@ namespace PegBot
                     new HLTVWatcher(irc),
                     //new TwitchPlugin(irc)
                     new RSSReader(irc),
+                    new RandomPlugin(irc),
                 };
         }
 
