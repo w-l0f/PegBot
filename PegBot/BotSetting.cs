@@ -75,9 +75,9 @@ namespace PegBot
         public object GetPluginSetting(string plugin, string channel)
         {
             var x = from xx in Plugins
-                    where xx.PluginName == plugin
+                    where xx.PluginName.Equals(plugin, StringComparison.CurrentCultureIgnoreCase)
                     from yy in xx.Channels
-                    where yy.ChannelName == channel
+                    where yy.ChannelName.Equals(channel, StringComparison.CurrentCultureIgnoreCase)
                     select yy.Setting;
 
             return x.FirstOrDefault();
@@ -107,7 +107,7 @@ namespace PegBot
         public List<string> GetEnabledChannels(string plugin)
         {
             var ch = from xx in Plugins
-                     where xx.PluginName == plugin
+                     where xx.PluginName.Equals(plugin, StringComparison.CurrentCultureIgnoreCase)
                      from yy in xx.Channels
                      select yy.ChannelName;
 
@@ -116,7 +116,7 @@ namespace PegBot
 
         private int GetCreatePluginSettings(out PluginSettings pluginSettings, string pluginName)
         {
-            var pl = Plugins.Select((p, index) => new { p, index }).FirstOrDefault(pi => pi.p.PluginName == pluginName);
+            var pl = Plugins.Select((p, index) => new { p, index }).FirstOrDefault(pi => pi.p.PluginName.Equals(pluginName, StringComparison.CurrentCultureIgnoreCase));
             if (pl == null)
             {
                 pl = new { p = new PluginSettings(pluginName), index = Plugins.Count() };
@@ -161,7 +161,7 @@ namespace PegBot
 
             private int GetCreatePluginChannelSettings(out PluginChannelSetting channelSetting, string channelName)
             {
-                var ch = Channels.Select((c, index) => new { c, index }).FirstOrDefault(ci => ci.c.ChannelName == channelName);
+                var ch = Channels.Select((c, index) => new { c, index }).FirstOrDefault(ci => ci.c.ChannelName.Equals(channelName, StringComparison.CurrentCultureIgnoreCase));
                 if (ch == null)
                 {
                     ch = new { c = new PluginChannelSetting(channelName), index = Channels.Count() };
