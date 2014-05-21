@@ -48,7 +48,7 @@ namespace PegBot.Plugins
                 "My sources say no",
                 "Outlook not so good",
                 "Very doubtful"};
-            irc.SendMessage(SendType.Message, channel, nick + ": " + arg + " - " + anwsers[rnd.Next(anwsers.Length)]);
+            irc.SendMessage(SendType.Message, channel, arg + " - " + anwsers[rnd.Next(anwsers.Length)]);
         }
     }
 }
