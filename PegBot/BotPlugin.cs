@@ -101,29 +101,36 @@ namespace PegBot
         {
             foreach (BotCommandFunction commandFunction in RegisteredCommands.FindAll(c => c.trigger(message)))
             {
-                if (String.IsNullOrEmpty(channel) || !channel.StartsWith("#"))
+                try
                 {
-                    irc.SendMessage(SendType.Message, replyTo, "Channel must be specified at end of command and start with a #");
-                    break;
-                }
-                if (!ChannelEnabled(channel))
-                    continue;
-                if (commandFunction.onlyOp)
-                {
-                    ChannelUser user = irc.GetChannelUser(channel, nick);
-                    if (!user.IsOp)
+                    if (String.IsNullOrEmpty(channel) || !channel.StartsWith("#"))
                     {
-                        irc.SendMessage(SendType.Message, replyTo, "Only a channel operator in " + channel + " can use that command");
+                        irc.SendMessage(SendType.Message, replyTo, "Channel must be specified at end of command and start with a #");
+                        break;
+                    }
+                    if (!ChannelEnabled(channel))
+                        continue;
+                    if (commandFunction.onlyOp)
+                    {
+                        ChannelUser user = irc.GetChannelUser(channel, nick);
+                        if (!user.IsOp)
+                        {
+                            irc.SendMessage(SendType.Message, replyTo, "Only a channel operator in " + channel + " can use that command");
+                            continue;
+                        }
+                    }
+                    string arg = message.Substring(commandFunction.command.Length).Trim();
+                    if (!commandFunction.argCheck(arg))
+                    {
+                        irc.SendMessage(SendType.Message, replyTo, "Invalid arguments, " + commandFunction.ToString());
                         continue;
                     }
+                    commandFunction.function(arg, channel, nick, replyTo);
                 }
-                string arg = message.Substring(commandFunction.command.Length).Trim();
-                if (!commandFunction.argCheck(arg))
+                catch (Exception e)
                 {
-                    irc.SendMessage(SendType.Message, replyTo, "Invalid arguments, " + commandFunction.ToString());
-                    continue;
+                    Console.WriteLine("Uncaught exception in " + PluginName + ", " + e.Message);
                 }
-                commandFunction.function(arg, channel, nick, replyTo);
             }
         }
 

@@ -86,9 +86,9 @@ namespace PegBot
         public bool IsPluginEnabled(string plugin, string channel)
         {
             var x = from xx in Plugins
-                    where xx.PluginName == plugin
+                    where xx.PluginName.Equals(plugin, StringComparison.CurrentCultureIgnoreCase)
                     from yy in xx.Channels
-                    where yy.ChannelName == channel
+                    where yy.ChannelName.Equals(channel, StringComparison.CurrentCultureIgnoreCase)
                     select yy.PluginEnabled;
 
             return x.FirstOrDefault();
