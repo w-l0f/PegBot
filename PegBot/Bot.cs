@@ -118,7 +118,7 @@ namespace PegBot
 
         private void OnPluginList(string arg, string channel, string nick, string replyTo)
         {
-            irc.SendMessage(SendType.Message, channel, "[X] => enabled in " + channel);
+            irc.SendMessage(SendType.Message, replyTo, "[X] => enabled in " + channel);
             foreach (BotPlugin p in Plugins)
                 irc.SendMessage(SendType.Message, replyTo, string.Format("[{0}] {1}", p.ChannelEnabled(channel) ? 'X' : ' ', p.PluginName));
         }
