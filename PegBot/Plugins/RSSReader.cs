@@ -80,6 +80,7 @@ namespace PegBot.Plugins
                         Feeds[key][1] = feed.Items.First().Title.Text;
                     }
                     catch (Exception) { };
+                    SetSetting(channel, Feeds);
                 }
             }
         }
