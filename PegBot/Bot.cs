@@ -83,7 +83,7 @@ namespace PegBot
                     new PingPlugin(irc),
                     new URLTitlePlugin(irc),
                     new HLTVWatcher(irc),
-                    //new TwitchPlugin(irc)
+                    new TwitchPlugin(irc),
                     new RSSReader(irc),
                     new RandomPlugin(irc),
                 };

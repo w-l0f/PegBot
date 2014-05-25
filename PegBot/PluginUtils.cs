@@ -14,6 +14,39 @@ namespace PegBot
 {
     class PluginUtils
     {
+        public static class IrcConstants
+        {
+            public const char CtcpChar = '\x1';
+            public const char IrcBold = '\x2';
+            public const char IrcColor = '\x3';
+            public const char IrcReverse = '\x16';
+            public const char IrcNormal = '\xf';
+            public const char IrcUnderline = '\x1f';
+            public const char CtcpQuoteChar = '\x20';
+
+        }
+
+        public enum IrcColors
+        {
+            White = 0,
+            Black = 1,
+            Blue = 2,
+            Green = 3,
+            LightRed = 4,
+            Brown = 5,
+            Purple = 6,
+            Orange = 7,
+            Yellow = 8,
+            LightGreen = 9,
+            Cyan = 10,
+            LightCyan = 11,
+            LightBlue = 12,
+            Pink = 13,
+            Grey = 14,
+            LightGrey = 15,
+            Transparent = 99
+        }
+
         public static void SaveObject(object o, string filename)
         {
             try
@@ -35,6 +68,28 @@ namespace PegBot
             {
                 return new BinaryFormatter().Deserialize(stream);
             }
+        }
+
+        public static string DownloadWebPage(string url)
+        {
+            string response = String.Empty;
+            var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
+            try
+            {
+                using (WebClient w = new WebClient())
+                {
+                    ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
+                    w.Encoding = Encoding.UTF8;
+                    response = w.DownloadString(url);
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
+            }
+            ServicePointManager.ServerCertificateValidationCallback = oldCallback;
+            return response;
         }
 
         public static string CreateShortUrl(string longurl)

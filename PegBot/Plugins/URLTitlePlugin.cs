@@ -39,31 +39,44 @@ namespace PegBot.Plugins
 
         public string GetWebPageTitle(string url)
         {
-            HttpWebRequest request = HttpWebRequest.Create(url) as HttpWebRequest;
+            var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
+            try
+            {
+                ServicePointManager.ServerCertificateValidationCallback = PluginUtils.ValidateServerCertificate;
 
-            if (request == null) return null;
+                HttpWebRequest request = HttpWebRequest.Create(url) as HttpWebRequest;
 
-            request.UseDefaultCredentials = true;
+                if (request == null) return null;
 
-            HttpWebResponse response = null;
-            try { response = request.GetResponse() as HttpWebResponse; }
-            catch (WebException) { return null; }
+                request.UseDefaultCredentials = true;
 
-            string regex = @"(?<=<title.*>)([\s\S]*)(?=</title>)";
+                HttpWebResponse response = null;
+                try { response = request.GetResponse() as HttpWebResponse; }
+                catch (WebException) { return null; }
 
-            if (new List<string>(response.Headers.AllKeys).Contains("Content-Type"))
-                if (response.Headers["Content-Type"].StartsWith("text/html"))
-                {
-                    // Download the page
-                    WebClient web = new WebClient();
-                    web.UseDefaultCredentials = true;
-                    web.Encoding = Encoding.UTF8;
-                    string page = web.DownloadString(url);
+                string regex = @"(?<=<title.*>)([\s\S]*)(?=</title>)";
 
-                    // Extract the title
-                    Regex ex = new Regex(regex, RegexOptions.IgnoreCase);
-                    return ex.Match(page).Value.Trim();
-                }
+                if (new List<string>(response.Headers.AllKeys).Contains("Content-Type"))
+                    if (response.Headers["Content-Type"].StartsWith("text/html"))
+                    {
+                        // Download the page
+                        string page;
+                        using (WebClient web = new WebClient())
+                        {
+                            web.UseDefaultCredentials = true;
+                            web.Encoding = Encoding.UTF8;
+                            page = web.DownloadString(url);
+                        }
+                        // Extract the title
+                        Regex ex = new Regex(regex, RegexOptions.IgnoreCase);
+                        return ex.Match(page).Value.Trim();
+                    }
+            }
+            catch { }
+            finally
+            {
+                ServicePointManager.ServerCertificateValidationCallback = oldCallback;
+            }
             return null;
         }
     }
