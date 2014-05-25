@@ -152,6 +152,7 @@ namespace Meebey.SmartIrc4net
                         away = true;
                     break;
                     case '@':
+                    case '~':
                         op = true;
                     break;
                     case '+':
