@@ -29,7 +29,7 @@ namespace PegBot.Plugins
             }
             irc.SendMessage(SendType.Message, channel, "PING:" + sb.ToString());
             if(!String.IsNullOrEmpty(arg))
-                irc.SendMessage(SendType.Message, channel, ">> " + arg);
+                irc.SendMessage(SendType.Message, channel, string.Format("{0}>>{0} {1}", PluginUtils.IrcConstants.IrcBold, arg));
         }
     }
 }
