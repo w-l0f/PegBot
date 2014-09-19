@@ -6,11 +6,13 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace PegBot.Plugins
 {
     class URLTitlePlugin : BotPlugin
     {
+        private static object urlLock = new object();
         public URLTitlePlugin(IrcClient irc)
             : base(irc, "URLTitle")
         {
@@ -21,61 +23,44 @@ namespace PegBot.Plugins
         {
             if (ChannelEnabled(e.Data.Channel))
             {
-                if (Uri.IsWellFormedUriString(e.Data.Message, UriKind.RelativeOrAbsolute))
-                {
-                    try
+                foreach (string s in e.Data.Message.Split(' '))
+                    if (Uri.IsWellFormedUriString(s, UriKind.Absolute))
                     {
-                        string title = GetWebPageTitle(e.Data.Message);
-                        if (!string.IsNullOrEmpty(title))
-                            irc.SendMessage(SendType.Message, e.Data.Channel, title);
+                        try
+                        {
+                            string title = GetWebPageTitle(s);
+                            if (!string.IsNullOrEmpty(title))
+                                irc.SendMessage(SendType.Message, e.Data.Channel, title);
+                        }
+                        catch
+                        {
+                            //don't bother
+                        }
                     }
-                    catch
-                    {
-                        //don't bother
-                    }
-                }
             }
         }
 
+
         public string GetWebPageTitle(string url)
         {
-            var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
-            try
+            lock (urlLock)
             {
-                ServicePointManager.ServerCertificateValidationCallback = PluginUtils.ValidateServerCertificate;
-
-                HttpWebRequest request = HttpWebRequest.Create(url) as HttpWebRequest;
-
-                if (request == null) return null;
-
-                request.UseDefaultCredentials = true;
-
-                HttpWebResponse response = null;
-                try { response = request.GetResponse() as HttpWebResponse; }
-                catch (WebException) { return null; }
-
-                string regex = @"(?<=<title.*>)([\s\S]*)(?=</title>)";
-
-                if (new List<string>(response.Headers.AllKeys).Contains("Content-Type"))
-                    if (response.Headers["Content-Type"].StartsWith("text/html"))
+                var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
+                try
+                {
+                    using (WebClient web = new WebClient())
                     {
-                        // Download the page
-                        string page;
-                        using (WebClient web = new WebClient())
-                        {
-                            web.UseDefaultCredentials = true;
-                            web.Encoding = Encoding.UTF8;
-                            page = web.DownloadString(url);
-                        }
-                        // Extract the title
-                        Regex ex = new Regex(regex, RegexOptions.IgnoreCase);
-                        return ex.Match(page).Value.Trim();
+                        string site = web.DownloadString(url);
+                        string title = Regex.Match(site, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>", RegexOptions.IgnoreCase).Groups["Title"].Value;
+                        if (!string.IsNullOrEmpty(title))
+                            return HttpUtility.HtmlDecode(title);
                     }
-            }
-            catch { }
-            finally
-            {
-                ServicePointManager.ServerCertificateValidationCallback = oldCallback;
+                }
+                catch { }
+                finally
+                {
+                    ServicePointManager.ServerCertificateValidationCallback = oldCallback;
+                }
             }
             return null;
         }
