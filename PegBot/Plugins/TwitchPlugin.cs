@@ -24,6 +24,9 @@ namespace PegBot.Plugins
             RegisterCommand(".twitch add", "<Twitch channel>", "Add <Twitch channel> to subscription list", OnAddTwitchChannel);
             RegisterCommand(".twitch remove", "<Twitch channel>", "Remove <Twitch channel> from subscription list", OnRemoveTwitchChannel);
 
+            //add all channels as online in order no to spam
+            OnlineChannels = GetChannelsToCheck();
+
             TwitchTimer = new Timer(1000 * 60 * UpdateIntervalMinutes);
             TwitchTimer.Elapsed += TwitchTimer_Elapsed;
             TwitchTimer.Enabled = true;
@@ -113,7 +116,7 @@ namespace PegBot.Plugins
             return false;
         }
 
-        private void CheckChannelStatuses()
+        private List<string> GetChannelsToCheck()
         {
             List<string> ChannelsToCheck = new List<string>();
 
@@ -123,7 +126,14 @@ namespace PegBot.Plugins
                 if (s != null)
                     ChannelsToCheck.AddRange(s);
             }
-            ChannelsToCheck = ChannelsToCheck.Distinct().ToList();
+
+            return ChannelsToCheck.Distinct().ToList();
+        }
+
+        private void CheckChannelStatuses()
+        {
+            List<string> ChannelsToCheck = GetChannelsToCheck();
+
             if (ChannelsToCheck.Count() > 0)
             {
                 string url = "https://api.twitch.tv/kraken/streams?channel=" + string.Join(",", ChannelsToCheck);
