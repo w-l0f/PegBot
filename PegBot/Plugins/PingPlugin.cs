@@ -10,6 +10,8 @@ namespace PegBot.Plugins
 {
     class PingPlugin : BotPlugin
     {
+        private const int maxLength = 430; //about right, to be safe
+
         public PingPlugin(IrcClient irc)
             : base(irc, "Ping")
         {
@@ -18,18 +20,39 @@ namespace PegBot.Plugins
 
         private void OnPing(string arg, string channel, string nick, string replyTo)
         {
-            StringBuilder sb = new StringBuilder();
-            foreach (DictionaryEntry user in irc.GetChannel(channel).Users)
+            if (arg.Length > 200)
             {
-                //skip self
-                if (((string)user.Key) == irc.Nickname)
-                    continue;
-                sb.Append(" ");
-                sb.Append(user.Key);
+                irc.SendMessage(SendType.Message, channel, "ping is too long");
             }
-            irc.SendMessage(SendType.Message, channel, "PING:" + sb.ToString());
-            if(!String.IsNullOrEmpty(arg))
-                irc.SendMessage(SendType.Message, channel, string.Format("{0}>>{0} {1}", PluginUtils.IrcConstants.IrcBold, arg));
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+                foreach (DictionaryEntry user in irc.GetChannel(channel).Users)
+                {
+                    string un = (string)user.Key;
+                    
+                    //skip self
+                    if (un == irc.Nickname)
+                        continue;
+
+                    if (nick.Length + sb.Length + arg.Length + 15 >= maxLength)
+                    {
+                        SendPing(channel, sb.ToString(), arg);
+                        sb = new StringBuilder();
+                        continue;
+                    }
+
+                    sb.Append(" ");
+                    sb.Append(un);
+                }
+                if (sb.Length > 0)
+                    SendPing(channel, sb.ToString(), arg);
+            }
+        }
+
+        private void SendPing(string channel, string names, string message)
+        {
+            irc.SendMessage(SendType.Message, channel, string.Format("PING:{1} {0}>> {2}{0}", PluginUtils.IrcConstants.IrcBold, names, message));
         }
     }
 }
