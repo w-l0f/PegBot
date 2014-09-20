@@ -22,6 +22,7 @@ namespace PegBot.Plugins
         private Timer hltvTimer;
         private int updateRate = 15;
         private float updateRandomness = 0.2F;
+        private bool firstupdate = true;
 
         public HLTVWatcher(IrcClient irc)
             : base(irc, "HLTV-Watcher")
@@ -30,11 +31,11 @@ namespace PegBot.Plugins
 
             minuteTimer = new Timer(1000 * 60);
             minuteTimer.Elapsed += new ElapsedEventHandler(updateMinute);
-            minuteTimer.Enabled = true;
+            minuteTimer.Start();
 
-            hltvTimer = new Timer(1000);
+            hltvTimer = new Timer(1000 * 10);
             hltvTimer.Elapsed += new ElapsedEventHandler(updateHLTV);
-            hltvTimer.Enabled = true;
+            hltvTimer.Start();
 
             RegisterCommand(".hltv watch", "<team>", "Hilight when <team> have match", OnWatch);
             RegisterCommand(".hltv unwatch", "<team>", "Remove hilight on <team>", OnUnWatch);
@@ -106,11 +107,12 @@ namespace PegBot.Plugins
                 List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
                 foreach (Match match in UpcomingMatches.FindAll(match => SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase)))
                 {
-                    if (match.Broadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 && match.PlayDate.CompareTo(DateTimeOffset.Now.AddMinutes(15)) <= 0)
+                    if (match.Broadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 && !firstupdate)
                         irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
                 }
             }
             UpcomingMatches.RemoveAll(m => m.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0);
+            firstupdate = false;
         }
 
         private void updateHLTV(object source, ElapsedEventArgs e)
