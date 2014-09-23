@@ -107,8 +107,12 @@ namespace PegBot.Plugins
                 List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
                 foreach (Match match in UpcomingMatches.FindAll(match => SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase)))
                 {
-                    if (match.Broadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 && !firstupdate)
-                        irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
+                    if (!match.hasBroadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 )
+                    {
+                        match.setBroadcast(channel);
+                        if(!firstupdate)
+                            irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
+                    }
                 }
             }
             UpcomingMatches.RemoveAll(m => m.PlayDate.CompareTo(DateTimeOffset.Now.AddDays(-1)) <= 0);
@@ -171,12 +175,16 @@ namespace PegBot.Plugins
                 broadcasted = new List<string>();
             }
 
-            public bool Broadcast(string channel)
+            public bool hasBroadcast(string channel)
             {
                 if (broadcasted.Contains(channel))
-                    return false;
+                    return true;
+                return false;
+            }
+
+            public void setBroadcast(string channel)
+            {
                 broadcasted.Add(channel);
-                return true;
             }
 
             public override bool Equals(object obj)
