@@ -102,6 +102,7 @@ namespace PegBot.Plugins
 
         private void updateMinute(object source, ElapsedEventArgs e)
         {
+            bool hasUpdatedHLTV = false;
             foreach (string channel in EnabledChannels)
             {
                 List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
@@ -109,6 +110,11 @@ namespace PegBot.Plugins
                 {
                     if (!match.hasBroadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 )
                     {
+                        if(!hasUpdatedHLTV)
+                        {
+                            hasUpdatedHLTV = true;
+                            updateHLTV(null, null);
+                        }
                         match.setBroadcast(channel);
                         if(!firstupdate)
                             irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
@@ -121,8 +127,10 @@ namespace PegBot.Plugins
 
         private void updateHLTV(object source, ElapsedEventArgs e)
         {
+            hltvTimer.Stop();
             int randomness = new Random().Next(-(int)(updateRate * updateRandomness * 60 * 1000), (int)(updateRate * updateRandomness * 60 * 1000));
             hltvTimer.Interval = updateRate * 60 * 1000 + randomness;
+            hltvTimer.Start();
             try
             {
                 List<Match> newMatches = new List<Match>();
