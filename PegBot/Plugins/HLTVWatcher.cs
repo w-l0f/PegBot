@@ -108,13 +108,13 @@ namespace PegBot.Plugins
                 List<string> SubscribedTeams = GetSetting(channel) as List<string> ?? new List<string>();
                 foreach (Match match in UpcomingMatches.FindAll(match => SubscribedTeams.Contains(match.Team1, StringComparer.OrdinalIgnoreCase) || SubscribedTeams.Contains(match.Team2, StringComparer.OrdinalIgnoreCase)))
                 {
-                    if (!match.hasBroadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0 )
+                    if (!hasUpdatedHLTV && !match.hasBroadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
                     {
-                        if(!hasUpdatedHLTV)
-                        {
-                            hasUpdatedHLTV = true;
-                            updateHLTV(null, null);
-                        }
+                        hasUpdatedHLTV = true;
+                        updateHLTV(null, null);
+                    }
+                    if (!match.hasBroadcast(channel) && match.PlayDate.CompareTo(DateTimeOffset.Now) <= 0)
+                    {
                         match.setBroadcast(channel);
                         if(!firstupdate)
                             irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
