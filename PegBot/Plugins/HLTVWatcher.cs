@@ -91,7 +91,7 @@ namespace PegBot.Plugins
             else
             {
                 foreach (Match match in matches)
-                    irc.SendMessage(SendType.Message, replyTo, match.PlayDate.TimeOfDay.ToString() + " " + match.ToString());
+                    irc.SendMessage(SendType.Message, replyTo, match.PlayDate.TimeOfDay.ToString() + " " + match.getTeams() + " (" + match.getHLTVMatchPage() + ")");
             }
         }
 
@@ -117,7 +117,7 @@ namespace PegBot.Plugins
                     {
                         match.setBroadcast(channel);
                         if(!firstupdate)
-                            irc.SendMessage(SendType.Message, channel, "Now starting " + match.ToString());
+                            irc.SendMessage(SendType.Message, channel, "Now starting " + match.getTeams() + " (" + match.getFirstStream() + ")");
                     }
                 }
             }
@@ -227,22 +227,44 @@ namespace PegBot.Plugins
                 return PlayDate.CompareTo(otherMatch.PlayDate);
             }
 
-            public override string ToString()
+            public string getTeams()
+            {
+                return Team1 + " vs " + Team2;
+            }
+
+            public string getHLTVMatchPage()
             {
                 if (String.IsNullOrEmpty(ShortUrl))
                     ShortUrl = PluginUtils.CreateShortUrl(MatchPage);
-
-                StringBuilder sb = new StringBuilder();
-                sb.Append(Team1);
-                sb.Append(" vs ");
-                sb.Append(Team2);
-                sb.Append(" (");
                 if (String.IsNullOrEmpty(ShortUrl))
-                    sb.Append(MatchPage);
+                    return MatchPage;
                 else
-                    sb.Append(ShortUrl);
-                sb.Append(")");
-                return sb.ToString();
+                    return ShortUrl;
+            }
+
+            public string getFirstStream()
+            {
+                string matchpagedata = PluginUtils.DownloadWebPage(MatchPage);
+                int streamIndex = matchpagedata.IndexOf("class=\"stream");
+                if(streamIndex != -1)
+                {
+                    int linkIndex = matchpagedata.IndexOf("<a href=\"", streamIndex) + 10;
+                    string link = "http://www.hltv.org/" + matchpagedata.Substring(linkIndex, (matchpagedata.IndexOf("\"", linkIndex) - linkIndex));
+                    link = link.Remove(32, 4);
+                    string streampage = PluginUtils.DownloadWebPage(link);
+
+                    //check if it is twitch channel first
+                    int channelIndex = streampage.IndexOf("channel=") + 8;
+                    if(channelIndex != -1)
+                    {
+                        string channel = streampage.Substring(channelIndex, streampage.IndexOf("\"", channelIndex) - channelIndex);
+                        if (!String.IsNullOrWhiteSpace(channel))
+                            return "http://twitch.tv/" + channel;
+                    }
+
+                    //todo: check if it is hitbox channel
+                }
+                return MatchPage;
             }
         }
     }
