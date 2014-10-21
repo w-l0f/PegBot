@@ -258,13 +258,13 @@ namespace PegBot.Plugins
                     if(channelIndex != -1)
                     {
                         string channel = streampage.Substring(channelIndex, streampage.IndexOf("\"", channelIndex) - channelIndex);
-                        if (!String.IsNullOrWhiteSpace(channel))
+                        if (!String.IsNullOrWhiteSpace(channel) && !channel.StartsWith("TYPE "))
                             return "http://twitch.tv/" + channel;
                     }
 
                     //todo: check if it is hitbox channel
                 }
-                return MatchPage;
+                return getHLTVMatchPage();
             }
         }
     }
