@@ -48,6 +48,7 @@ namespace PegBot
             RegisterCommand(".plugin list", "List all plugins", OnPluginList, false);
             RegisterCommand(".plugin enable", "<plugin>", "Enable plugin", OnPluginEnable);
             RegisterCommand(".plugin disable", "<plugin>", "Disable plugin", OnPluginEnable);
+            RegisterCommand(".plugin channels", "List the channels bot is subscribed to", OnPluginChannelList, false);
 
             try
             {
@@ -111,6 +112,7 @@ namespace PegBot
                 irc.SendMessage(SendType.Message, replyTo, "Add #<channel> to apply onto a specific channel");
             irc.SendMessage(SendType.Message, replyTo, ".plugin list -- List all plugins");
             irc.SendMessage(SendType.Message, replyTo, ".plugin <enable/disable> <plugin> -- Enable/disable plugin");
+            irc.SendMessage(SendType.Message, replyTo, ".plugin channels -- List the channels bot is subscribed to");
             foreach (BotPlugin p in Plugins)
                 foreach (string text in p.GetHelpCommands(channel))
                     irc.SendMessage(SendType.Message, replyTo, text);
@@ -139,6 +141,13 @@ namespace PegBot
                 irc.SendMessage(SendType.Message, replyTo, "Found no plugin named " + arg);
             else
                 Setting.SetPluginEnabled(channel, plugin.PluginName, false);
+        }
+
+        private void OnPluginChannelList(string arg, string channel, string nick, string replyTo)
+        {
+            irc.SendMessage(SendType.Message, replyTo, "Subscribed channels:");
+            foreach (string c in EnabledChannels)
+                irc.SendMessage(SendType.Message, replyTo, c);
         }
     }
 }
