@@ -12,7 +12,6 @@ namespace PegBot.Plugins
 {
     class URLTitlePlugin : BotPlugin
     {
-        private static object urlLock = new object();
         public URLTitlePlugin(IrcClient irc)
             : base(irc, "URLTitle")
         {
@@ -40,29 +39,12 @@ namespace PegBot.Plugins
             }
         }
 
-
         public string GetWebPageTitle(string url)
         {
-            lock (urlLock)
-            {
-                var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
-                ServicePointManager.ServerCertificateValidationCallback = PluginUtils.ValidateServerCertificate;
-                try
-                {
-                    using (WebClient web = new WebClient())
-                    {
-                        string site = web.DownloadString(url);
-                        string title = Regex.Match(site, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>", RegexOptions.IgnoreCase).Groups["Title"].Value;
-                        if (!string.IsNullOrEmpty(title))
-                            return HttpUtility.HtmlDecode(title);
-                    }
-                }
-                catch { }
-                finally
-                {
-                    ServicePointManager.ServerCertificateValidationCallback = oldCallback;
-                }
-            }
+            string site = PluginUtils.DownloadWebPage(url);
+            string title = Regex.Match(site, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>", RegexOptions.IgnoreCase).Groups["Title"].Value;
+            if (!string.IsNullOrEmpty(title))
+                return HttpUtility.HtmlDecode(title);
             return null;
         }
     }
