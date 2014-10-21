@@ -54,20 +54,16 @@ namespace PegBot
 
         public void SetPluginEnabled(string channel, string plugin, bool enabled)
         {
-            PluginSettings pl;
-            int plIndex = GetCreatePluginSettings(out pl, plugin);
+            PluginSettings pl = GetCreatePluginSettings(plugin);
             pl.SetChannelEnabled(channel, enabled);
-            Plugins[plIndex] = pl;
 
             SaveSettings();
         }
 
         public void SetPluginSetting(string plugin, string channel, object setting)
         {
-            PluginSettings pl;
-            int plIndex = GetCreatePluginSettings(out pl, plugin);
+            PluginSettings pl = GetCreatePluginSettings(plugin);
             pl.SetChannelSetting(channel, setting);
-            Plugins[plIndex] = pl;
 
             SaveSettings();
         }
@@ -109,21 +105,22 @@ namespace PegBot
             var ch = from xx in Plugins
                      where xx.PluginName.Equals(plugin, StringComparison.CurrentCultureIgnoreCase)
                      from yy in xx.Channels
+                     where yy.PluginEnabled
                      select yy.ChannelName;
 
             return ch.ToList();
         }
 
-        private int GetCreatePluginSettings(out PluginSettings pluginSettings, string pluginName)
+        private PluginSettings GetCreatePluginSettings(string pluginName)
         {
-            var pl = Plugins.Select((p, index) => new { p, index }).FirstOrDefault(pi => pi.p.PluginName.Equals(pluginName, StringComparison.CurrentCultureIgnoreCase));
+            var pl = Plugins.FirstOrDefault(p => p.PluginName.Equals(pluginName, StringComparison.CurrentCultureIgnoreCase));
             if (pl == null)
             {
-                pl = new { p = new PluginSettings(pluginName), index = Plugins.Count() };
-                Plugins.Add(pl.p);
+                pl = new PluginSettings(pluginName);
+                Plugins.Add(pl);
             }
-            pluginSettings = pl.p;
-            return pl.index;
+
+            return pl;
         }
 
         [Serializable()]
@@ -141,34 +138,26 @@ namespace PegBot
 
             public void SetChannelEnabled(string channelName, bool enabled)
             {
-                PluginChannelSetting ch;
-                int chIndex = GetCreatePluginChannelSettings(out ch, channelName);
-
+                PluginChannelSetting ch = GetCreatePluginChannelSettings(channelName);
                 ch.PluginEnabled = enabled;
-
-                Channels[chIndex] = ch;
             }
 
             public void SetChannelSetting(string channelName, object setting)
             {
-                PluginChannelSetting ch;
-                int chIndex = GetCreatePluginChannelSettings(out ch, channelName);
-
+                PluginChannelSetting ch = GetCreatePluginChannelSettings(channelName);
                 ch.Setting = setting;
-
-                Channels[chIndex] = ch;
             }
 
-            private int GetCreatePluginChannelSettings(out PluginChannelSetting channelSetting, string channelName)
+            private PluginChannelSetting GetCreatePluginChannelSettings(string channelName)
             {
-                var ch = Channels.Select((c, index) => new { c, index }).FirstOrDefault(ci => ci.c.ChannelName.Equals(channelName, StringComparison.CurrentCultureIgnoreCase));
+                var ch = Channels.FirstOrDefault(c => c.ChannelName.Equals(channelName, StringComparison.CurrentCultureIgnoreCase));
                 if (ch == null)
                 {
-                    ch = new { c = new PluginChannelSetting(channelName), index = Channels.Count() };
-                    Channels.Add(ch.c);
+                    ch = new PluginChannelSetting(channelName);
+                    Channels.Add(ch);
                 }
-                channelSetting = ch.c;
-                return ch.index;
+
+                return ch;
             }
         }
 
@@ -198,7 +187,6 @@ namespace PegBot
                     {
                         return new BinaryFormatter().Deserialize(stream);
                     }
-
                 }
                 set
                 {
