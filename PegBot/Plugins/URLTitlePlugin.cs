@@ -46,6 +46,7 @@ namespace PegBot.Plugins
             lock (urlLock)
             {
                 var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
+                ServicePointManager.ServerCertificateValidationCallback = PluginUtils.ValidateServerCertificate;
                 try
                 {
                     using (WebClient web = new WebClient())
