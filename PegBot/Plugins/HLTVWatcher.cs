@@ -140,9 +140,11 @@ namespace PegBot.Plugins
                 {
                     int vs = item.Title.Text.IndexOf(" vs ");
                     if (vs < 1)
-                        return;
+                        continue;
                     string Team1 = item.Title.Text.Substring(0, vs);
                     string Team2 = item.Title.Text.Substring(vs + 4);
+                    if (Team1.Equals("No team", StringComparison.CurrentCultureIgnoreCase) || Team2.Equals("No team", StringComparison.CurrentCultureIgnoreCase))
+                        continue;
                     string MatchPage = String.Empty;
                     if (item.Links.Count > 0)
                         MatchPage = item.Links[0].Uri.AbsoluteUri;
