@@ -58,7 +58,7 @@ namespace PegBot
             }
             catch (IOException ex)
             {
-                Console.WriteLine(ex.Message);
+                Log(ex.Message);
             }
         }
 
@@ -92,8 +92,8 @@ namespace PegBot
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
+                Log(e.Message);
+                Log(e.StackTrace);
             }
             ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             return response;
@@ -117,8 +117,8 @@ namespace PegBot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e.Message);
-                    Console.WriteLine(e.StackTrace);
+                    Log(e.Message);
+                    Log(e.StackTrace);
                 }
                 ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             }
@@ -135,6 +135,11 @@ namespace PegBot
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             return true; //lol security
+        }
+
+        public static void Log(string message)
+        {
+            Console.WriteLine(string.Format("{0:s}: {1}", DateTime.Now, message));
         }
     }
 }
