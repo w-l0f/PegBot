@@ -72,6 +72,11 @@ namespace PegBot
 
         public static string DownloadWebPage(string url)
         {
+            return DownloadWebPage(url, false);
+        }
+
+        public static string DownloadWebPage(string url, bool identifyAsBrowser)
+        {
             string response = String.Empty;
             var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
             try
@@ -80,6 +85,8 @@ namespace PegBot
                 {
                     ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
                     w.Encoding = Encoding.UTF8;
+                    if(identifyAsBrowser)
+                        w.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2";
                     response = w.DownloadString(url);
                 }
             }

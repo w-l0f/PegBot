@@ -41,7 +41,7 @@ namespace PegBot.Plugins
 
         public string GetWebPageTitle(string url)
         {
-            string site = PluginUtils.DownloadWebPage(url);
+            string site = PluginUtils.DownloadWebPage(url, true);
             string title = Regex.Match(site, @"\<title\b[^>]*\>\s*(?<Title>[\s\S]*?)\</title\>", RegexOptions.IgnoreCase).Groups["Title"].Value;
             if (!string.IsNullOrEmpty(title))
                 return HttpUtility.HtmlDecode(title);
