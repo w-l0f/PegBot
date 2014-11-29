@@ -92,8 +92,7 @@ namespace PegBot
             }
             catch (Exception e)
             {
-                Log(e.Message);
-                Log(e.StackTrace);
+                Log(e.Message, e.StackTrace);
             }
             ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             return response;
@@ -137,9 +136,16 @@ namespace PegBot
             return true; //lol security
         }
 
-        public static void Log(string message)
+        public static void Log(params string[] lines)
         {
-            Console.WriteLine(string.Format("{0:s}: {1}", DateTime.Now, message));
+            using (System.IO.StreamWriter file = new System.IO.StreamWriter("error.log", true, Encoding.UTF8))
+            {
+                List<string> split = new List<string>();
+                lines.ToList().ForEach(l => split.AddRange(l.Split(Environment.NewLine.ToCharArray())));
+
+                foreach (var line in split.Where(s => !string.IsNullOrWhiteSpace(s)))
+                    file.WriteLine(string.Format("{0:s}: {1}", DateTime.Now, line));
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ namespace PegBot
             RegisteredCommands = new List<BotCommandFunction>();
             irc.OnQueryMessage += OnSubscribedQuery;
             irc.OnChannelMessage += OnSubscribedChannel;
-            System.Console.WriteLine(PluginName + " loaded");
+            Console.WriteLine(PluginName + " loaded");
         }
 
         public List<string> EnabledChannels
@@ -129,7 +129,7 @@ namespace PegBot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Uncaught exception in " + PluginName + ", " + e.Message);
+                    PluginUtils.Log("Uncaught exception in " + PluginName + ", " + e.Message);
                 }
             }
         }

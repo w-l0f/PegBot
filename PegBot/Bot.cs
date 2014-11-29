@@ -100,8 +100,7 @@ namespace PegBot
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message);
-                Console.WriteLine(ex.StackTrace);
+                Console.WriteLine("Error: " + ex.Message, ex.StackTrace);
                 irc.Disconnect();
             }
         }
