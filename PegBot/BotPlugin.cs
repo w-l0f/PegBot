@@ -25,7 +25,7 @@ namespace PegBot
             RegisteredCommands = new List<BotCommandFunction>();
             irc.OnQueryMessage += OnSubscribedQuery;
             irc.OnChannelMessage += OnSubscribedChannel;
-            Console.WriteLine(PluginName + " loaded");
+            PluginUtils.Log(PluginName + " loaded");
         }
 
         public List<string> EnabledChannels

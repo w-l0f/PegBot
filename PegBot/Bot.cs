@@ -52,12 +52,12 @@ namespace PegBot
 
             try
             {
-                Console.WriteLine(string.Format("Connecting to {0}:{1}...", server, port));
+                PluginUtils.Log(string.Format("Connecting to {0}:{1}...", server, port));
                 irc.Connect(server, port);
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error on connect: " + ex.Message);
+                PluginUtils.Log("Error on connect: " + ex.Message);
             }
         }
 
@@ -94,13 +94,13 @@ namespace PegBot
         {
             try
             {
-                Console.WriteLine("Connected to server.");
+                PluginUtils.Log("Connected to server.");
                 irc.Login(NickName, NickName, 4, UserName);
                 irc.Listen();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("Error: " + ex.Message, ex.StackTrace);
+                PluginUtils.Log("Error: " + ex.Message, ex.StackTrace);
                 irc.Disconnect();
             }
         }

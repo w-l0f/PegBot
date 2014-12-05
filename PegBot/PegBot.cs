@@ -17,8 +17,8 @@ namespace PegBot
         static void Main(string[] args)
         {
             HandleArgs(args);
-            Console.WriteLine(DateTime.Now.ToString("U"));
-            Console.WriteLine("Starting in: " + Directory.GetCurrentDirectory());
+            PluginUtils.Log(DateTime.Now.ToString("U"));
+            PluginUtils.Log("Starting in: " + Directory.GetCurrentDirectory());
             new Bot(server, port ?? 6667, nickname ?? "PegBot", username);
             Console.Write("Press any key to exit");
             Console.Read();
