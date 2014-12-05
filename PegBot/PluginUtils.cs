@@ -117,6 +117,7 @@ namespace PegBot
                 catch (Exception e)
                 {
                     Log(e.Message);
+                    Log("URL: " + longurl);
                     Log(e.StackTrace);
                 }
                 ServicePointManager.ServerCertificateValidationCallback = oldCallback;
@@ -144,7 +145,10 @@ namespace PegBot
                 lines.ToList().ForEach(l => split.AddRange(l.Split(Environment.NewLine.ToCharArray())));
 
                 foreach (var line in split.Where(s => !string.IsNullOrWhiteSpace(s)))
+                {
+                    Console.WriteLine(string.Format("{0:s}: {1}", DateTime.Now, line));
                     file.WriteLine(string.Format("{0:s}: {1}", DateTime.Now, line));
+                }
             }
         }
     }
