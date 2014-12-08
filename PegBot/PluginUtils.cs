@@ -92,7 +92,7 @@ namespace PegBot
             }
             catch (Exception e)
             {
-                Log(e.Message, e.StackTrace);
+                Log(e.Message, "URL: " + url, e.StackTrace);
             }
             ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             return response;
@@ -116,9 +116,7 @@ namespace PegBot
                 }
                 catch (Exception e)
                 {
-                    Log(e.Message);
-                    Log("URL: " + longurl);
-                    Log(e.StackTrace);
+                    Log(e.Message, "URL: " + longurl, e.StackTrace);
                 }
                 ServicePointManager.ServerCertificateValidationCallback = oldCallback;
             }
