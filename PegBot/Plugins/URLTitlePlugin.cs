@@ -22,8 +22,9 @@ namespace PegBot.Plugins
         {
             if (ChannelEnabled(e.Data.Channel))
             {
-                foreach (string s in e.Data.Message.Split(' '))
-                    if (Uri.IsWellFormedUriString(s, UriKind.Absolute))
+                Uri u;
+                foreach (string s in e.Data.Message.Split(' '))     
+                    if (Uri.TryCreate(s, UriKind.Absolute, out u) && (u.Scheme == Uri.UriSchemeHttp || u.Scheme == Uri.UriSchemeHttps))
                     {
                         try
                         {
