@@ -20,8 +20,8 @@ namespace PegBot.Plugins
             : base(irc, "RSSReader")
         {
             RSSTimer = new Timer(1000 * 60 * updateTime);
-            RSSTimer.Elapsed += RSSTimer_Elapsed;
-            RSSTimer.Enabled = true;
+            RSSTimer.Elapsed += new ElapsedEventHandler(RSSTimer_Elapsed);
+            RSSTimer.Start();
 
             RegisterCommand(".rss add", "<short-name> <rss-url>", "Add rss watcher on <rss-url>", OnAdd, arg => arg.Split(' ').Length >= 2);
             RegisterCommand(".rss remove", "<short-name>", "Remove rss watcher", OnRemove);
@@ -58,7 +58,7 @@ namespace PegBot.Plugins
                     irc.SendMessage(SendType.Message, replyTo, "rss-feed: " + text);
         }
 
-        void RSSTimer_Elapsed(object sender, ElapsedEventArgs e)
+        void RSSTimer_Elapsed(object sender, ElapsedEventArgs args)
         {
             foreach (string channel in EnabledChannels)
             {
@@ -79,7 +79,10 @@ namespace PegBot.Plugins
                         }
                         Feeds[key][1] = feed.Items.First().Title.Text;
                     }
-                    catch (Exception) { };
+                    catch (Exception e)
+                    {
+                        PluginUtils.Log(e.Message, "RSS: " + Feeds[key][0], e.StackTrace);
+                    };
                     SetSetting(channel, Feeds);
                 }
             }
