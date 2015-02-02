@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.ServiceModel.Syndication;
 using System.Text;
 using System.Threading.Tasks;
@@ -60,6 +61,8 @@ namespace PegBot.Plugins
 
         void RSSTimer_Elapsed(object sender, ElapsedEventArgs args)
         {
+            var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
+            ServicePointManager.ServerCertificateValidationCallback = PluginUtils.ValidateServerCertificate;
             foreach (string channel in EnabledChannels)
             {
                 Dictionary<string, string[]> Feeds = GetSetting(channel) as Dictionary<string, string[]> ?? new Dictionary<string, string[]>();
@@ -86,6 +89,7 @@ namespace PegBot.Plugins
                     SetSetting(channel, Feeds);
                 }
             }
+            ServicePointManager.ServerCertificateValidationCallback = oldCallback;
         }
     }
 }
