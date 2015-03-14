@@ -145,25 +145,24 @@ namespace PegBot.Plugins
                         var tr = new JavaScriptSerializer().Deserialize<TwitchStreamsResponse>(r);
                         if (tr.streams != null && tr.streams.Count() > 0)
                         {
-                            List<string> streams = tr.streams.Select(s => s.channel.name).ToList();
-                            foreach (var stream in streams.Where(s => !OnlineChannels.Exists(c => c == s)))
+                            foreach (var stream in tr.streams.Where(s => !OnlineChannels.Exists(c => c == s.channel.name)))
                             {
                                 foreach (string ch in EnabledChannels)
                                 {
-                                    var channel = tr.streams.FirstOrDefault(s => s.channel.name == stream).channel;
+                                    var channel = stream.channel;
                                     string status = string.IsNullOrEmpty(channel.status) ? "" : "/ '" + channel.status + "'";
                                     string chUrl = GetShortUrl(channel.url);
 
                                     var setting = GetSetting(ch) as List<string>;
-                                    if (setting != null && setting.Contains(stream))
+                                    if (setting != null && setting.Contains(channel.name))
                                     {
-                                        irc.SendMessage(SendType.Message, ch, string.Format("{3}{0}{3} is now live on Twitch {1} / {2}",
-                                            stream, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold));
+                                        irc.SendMessage(SendType.Message, ch, string.Format("{3}{0}{3} is now live on Twitch / playing {4} {1} / {2}",
+                                            stream, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold, stream.game));
                                     }
                                 }
                             }
 
-                            OnlineChannels = streams;
+                            OnlineChannels = tr.streams.Select(s => s.channel.name).ToList();
                         }
 
                         else if (OnlineChannels.Count() > 0)
