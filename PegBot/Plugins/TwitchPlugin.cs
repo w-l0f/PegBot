@@ -157,7 +157,7 @@ namespace PegBot.Plugins
                                     if (setting != null && setting.Contains(channel.name))
                                     {
                                         irc.SendMessage(SendType.Message, ch, string.Format("{3}{0}{3} is now live on Twitch / playing {4} {1} / {2}",
-                                            stream, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold, stream.game));
+                                            channel.name, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold, stream.game));
                                     }
                                 }
                             }
