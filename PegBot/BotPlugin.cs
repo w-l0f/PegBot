@@ -112,8 +112,8 @@ namespace PegBot
                         continue;
                     if (commandFunction.onlyOp)
                     {
-                        ChannelUser user = irc.GetChannelUser(channel, nick);
-                        if (!user.IsOp)
+                        NonRfcChannelUser user = irc.GetChannelUser(channel, nick) as NonRfcChannelUser;
+                        if (!user.IsOp && !user.IsOwner && !user.IsChannelAdmin)
                         {
                             irc.SendMessage(SendType.Message, replyTo, "Only a channel operator in " + channel + " can use that command");
                             continue;

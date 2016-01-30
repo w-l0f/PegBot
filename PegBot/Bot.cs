@@ -37,6 +37,7 @@ namespace PegBot
             irc.AutoRetry = true;
             irc.AutoRetryDelay = 60;
             irc.UseSsl = ssl;
+            irc.SupportNonRfc = true;
 
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnInvite += OnInvite;
