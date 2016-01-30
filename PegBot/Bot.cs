@@ -17,7 +17,7 @@ namespace PegBot
         
         private List<BotPlugin> Plugins;
 
-        public Bot(string server, int port, string nickname, string username)
+        public Bot(string server, int port, string nickname, string username, bool ssl)
             : base(new IrcClient(), "MainPlugin")
         {
             NickName = nickname;
@@ -36,6 +36,7 @@ namespace PegBot
             irc.AutoRelogin = true;
             irc.AutoRetry = true;
             irc.AutoRetryDelay = 60;
+            irc.UseSsl = ssl;
 
             irc.OnConnected += new EventHandler(OnConnected);
             irc.OnInvite += OnInvite;

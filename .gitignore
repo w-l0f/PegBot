@@ -19,6 +19,7 @@
 *.sdf
 *.opensdf
 *.unsuccessfulbuild
+packages/
 ipch/
 [Oo]bj/
 [Bb]in

@@ -13,13 +13,14 @@ namespace PegBot
         private static int? port = new int?();
         private static string nickname;
         private static string username;
+        private static bool ssl = false;
 
         static void Main(string[] args)
         {
             HandleArgs(args);
             PluginUtils.Log(DateTime.Now.ToString("U"));
             PluginUtils.Log("Starting in: " + Directory.GetCurrentDirectory());
-            new Bot(server, port ?? 6667, nickname ?? "PegBot", username);
+            new Bot(server, port ?? 6667, nickname ?? "PegBot", username, ssl);
             Console.Write("Press any key to exit");
             Console.Read();
         }
@@ -47,6 +48,9 @@ namespace PegBot
                     case "-u":
                         username = args[i + 1];
                         i++;
+                        break;
+                    case "-ssl":
+                        ssl = true;
                         break;
                 }
             }
