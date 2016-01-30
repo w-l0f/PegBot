@@ -1,0 +1,4 @@
+[submodule "SmartIrc4net"]
+	path = SmartIrc4net
+	url = https://github.com/meebey/SmartIrc4net.git
+	branch = master
