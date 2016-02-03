@@ -89,6 +89,7 @@ namespace PegBot
                     new TwitchPlugin(irc),
                     new RSSReader(irc),
                     new RandomPlugin(irc),
+                    new WooPlugin(irc),
                 };
         }
 
