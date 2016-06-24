@@ -78,15 +78,31 @@ namespace PegBot
         public static string DownloadWebPage(string url, bool identifyAsBrowser)
         {
             string response = String.Empty;
+            var metaRedirectRegex = new Regex(@"content=\""\d+\s*;\s*?url=(?<URL>(.*?))\""", RegexOptions.IgnoreCase);
             var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
             try
             {
                 using (WebClient w = new WebClient())
                 {
                     ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
-                    if(identifyAsBrowser)
+                    if (identifyAsBrowser)
                         w.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2";
-                    response = w.DownloadString(url);
+
+                    for (int i = 0; i < 5; i++)
+                    {
+                        response = w.DownloadString(url);
+                        var m = metaRedirectRegex.Match(response);
+                        if (m.Success)
+                        {
+                            var redirect = m.Groups["URL"].Value;
+                            if (url != redirect)
+                            {
+                                url = redirect;
+                                continue;
+                            }
+                        }
+                        break;
+                    }
                 }
             }
             catch (Exception e)
