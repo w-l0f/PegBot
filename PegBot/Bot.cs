@@ -90,6 +90,7 @@ namespace PegBot
                     new RSSReader(irc),
                     new RandomPlugin(irc),
                     new WooPlugin(irc),
+                    new GamesDoneQuickPlugin(irc)
                 };
         }
 
