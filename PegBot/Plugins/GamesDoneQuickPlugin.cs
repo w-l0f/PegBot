@@ -39,7 +39,7 @@ namespace PegBot.Plugins
             if(Events.Count > 0)
             {
                 var nextEvent = Events.OrderBy(xx => xx.StartTime).First();
-                if (nextEvent.StartTime < DateTime.Now.AddDays(6))
+                if (nextEvent.StartTime < DateTime.Now)
                 {
                     Events.Remove(nextEvent);
                     var eventText = "Now on GDQ: " + GetEventText(nextEvent);
@@ -101,7 +101,7 @@ namespace PegBot.Plugins
                     subIndex = tryGetNextValue(info, subIndex, out gdqEvent.EndTime);
                     if (subIndex < 0) break;
 
-                    if (gdqEvent.StartTime > DateTime.Now.AddDays(6))
+                    if (gdqEvent.StartTime > DateTime.Now)
                         events.Add(gdqEvent);
 
                     parseIndex = stopIndex;
