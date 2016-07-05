@@ -13,7 +13,7 @@ namespace PegBot.Plugins
     class GamesDoneQuickPlugin : BotPlugin
     {
         private Timer UpdateTimer, AnnounceTimer;
-        private const int UpdateIntervalMinutes = 60;
+        private const int UpdateIntervalMinutes = 20;
         private const int AnnounceIntervalMinutes = 1;
         private const string GDQUrl = "https://gamesdonequick.com/tracker/runs/";
 
@@ -42,7 +42,8 @@ namespace PegBot.Plugins
                 if (nextEvent.StartTime < DateTime.Now)
                 {
                     Events.Remove(nextEvent);
-                    var eventText = "Now on GDQ: " + GetEventText(nextEvent);
+                    var eventText = string.Format("{1}{2}Now{3} on GDQ: {0}", GetEventText(nextEvent),
+                        PluginUtils.IrcConstants.IrcColor, (int)PluginUtils.IrcColors.LightGreen, PluginUtils.IrcConstants.IrcNormal);
 
                     foreach (string ch in EnabledChannels)
                     {
@@ -154,8 +155,9 @@ namespace PegBot.Plugins
             if(Events.Count > 0)
             {
                 var nextUp = Events.OrderBy(xx => xx.StartTime).First();
-                message = string.Format("Next up on GDQ: {0} @ {1} {2}",
-                    GetEventText(nextUp), nextUp.StartTime.ToShortDateString(), nextUp.StartTime.ToShortTimeString());
+                message = string.Format("{3}{4}Next up{5} on GDQ: {0} @ {1} {2}",
+                    GetEventText(nextUp), nextUp.StartTime.ToShortDateString(), nextUp.StartTime.ToShortTimeString(), 
+                    PluginUtils.IrcConstants.IrcColor, (int)PluginUtils.IrcColors.Yellow, PluginUtils.IrcConstants.IrcNormal);
             }
 
             irc.SendMessage(SendType.Message, replyTo, message);
