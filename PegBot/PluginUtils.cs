@@ -78,6 +78,11 @@ namespace PegBot
 
         public static string DownloadWebPage(string url, bool identifyAsBrowser)
         {
+            return DownloadWebPage(url, identifyAsBrowser, null);
+        }
+
+        public static string DownloadWebPage(string url, bool identifyAsBrowser, Dictionary<string, string> headers)
+        {
             string response = String.Empty;
             var metaRedirectRegex = new Regex(@"content=\""\d+\s*;\s*?url=(?<URL>(.*?))\""", RegexOptions.IgnoreCase);
             var oldCallback = ServicePointManager.ServerCertificateValidationCallback;
@@ -88,6 +93,12 @@ namespace PegBot
                     ServicePointManager.ServerCertificateValidationCallback = ValidateServerCertificate;
                     if (identifyAsBrowser)
                         w.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.121 Safari/535.2";
+
+                    if (headers != null)
+                    {
+                        foreach (var h in headers)
+                            w.Headers.Add(h.Key, h.Value);
+                    }
 
                     for (int i = 0; i < 5; i++)
                     {

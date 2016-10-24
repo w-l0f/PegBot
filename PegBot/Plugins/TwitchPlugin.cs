@@ -23,7 +23,7 @@ namespace PegBot.Plugins
             RegisterCommand(".twitch list", "List all currently subscribed Twitch channels", OnListTwitchChannels, false);
             RegisterCommand(".twitch add", "<Twitch channel>", "Add <Twitch channel> to subscription list", OnAddTwitchChannel);
             RegisterCommand(".twitch remove", "<Twitch channel>", "Remove <Twitch channel> from subscription list", OnRemoveTwitchChannel);
-
+            RegisterCommand(".twitch clientid", "<Client-ID>", "use <Client-ID> as twitch client id (api key) for this channel", OnClientId);
             //add all channels as online in order no to spam
             OnlineChannels = GetChannelsToCheck();
 
@@ -32,10 +32,27 @@ namespace PegBot.Plugins
             TwitchTimer.Enabled = true;
         }
 
+        private TwitchChannelSetting GetTwitchSetting(string channel)
+        {
+            object setting = GetSetting(channel);
+            if (setting is TwitchChannelSetting)
+            {
+                return setting as TwitchChannelSetting;
+            }
+
+            //backwards compatible to previous version
+            if (setting is List<string>)
+            {
+                return new TwitchChannelSetting() { ClientId = "", Channels = setting as List<string> };
+            }
+
+            return new TwitchChannelSetting();
+        }
+
         private void OnListTwitchChannels(string arg, string channel, string nick, string replyTo)
         {
-            var setting = GetSetting(channel) as List<string>;
-            if (setting == null || setting.Count() == 0)
+            var setting = GetTwitchSetting(channel);
+            if (setting == null || setting.Channels == null || setting.Channels.Count() == 0)
             {
                 irc.SendMessage(SendType.Message, replyTo, "No twitch channels subscribed in " + channel);
             }
@@ -43,7 +60,7 @@ namespace PegBot.Plugins
             {
                 irc.SendMessage(SendType.Message, replyTo,
                     string.Format("[X] => Twitch channel online", UpdateIntervalMinutes));
-                setting.ForEach(tc =>
+                setting.Channels.ForEach(tc =>
                     irc.SendMessage(SendType.Message, replyTo,
                         string.Format("[{0}] {1}", OnlineChannels.Contains(tc) ? "X" : " ", tc)));
             }
@@ -52,15 +69,15 @@ namespace PegBot.Plugins
 
         private void OnAddTwitchChannel(string arg, string channel, string nick, string replyTo)
         {
-            var setting = GetSetting(channel) as List<string> ?? new List<string>();
-            if (!setting.Exists(s => s.Equals(arg, StringComparison.CurrentCultureIgnoreCase)))
+            var setting = GetTwitchSetting(channel);
+            if (!setting.Channels.Exists(s => s.Equals(arg, StringComparison.CurrentCultureIgnoreCase)))
             {
-                string propername = GetTwitchChannelName(arg);
+                string propername = GetTwitchChannelName(arg, setting.ClientId);
                 if (!string.IsNullOrEmpty(propername))
                 {
-                    setting.Add(propername);
+                    setting.Channels.Add(propername);
                     SetSetting(channel, setting);
-                    if (!OnlineChannels.Contains(propername) && IsChannelOnline(propername))
+                    if (!OnlineChannels.Contains(propername) && IsChannelOnline(propername, setting.ClientId))
                     {
                         OnlineChannels.Add(propername);
                     }
@@ -74,9 +91,16 @@ namespace PegBot.Plugins
 
         private void OnRemoveTwitchChannel(string arg, string channel, string nick, string replyTo)
         {
-            var setting = GetSetting(channel) as List<string> ?? new List<string>();
-            if (setting.Remove(arg))
+            var setting = GetTwitchSetting(channel);
+            if (setting.Channels.Remove(arg))
                 SetSetting(channel, setting);
+        }
+
+        private void OnClientId(string arg, string channel, string nick, string replyTo)
+        {
+            var setting = GetTwitchSetting(channel);
+            setting.ClientId = arg;
+            SetSetting(channel, setting);
         }
 
         void TwitchTimer_Elapsed(object sender, ElapsedEventArgs e)
@@ -84,11 +108,15 @@ namespace PegBot.Plugins
             CheckChannelStatuses();
         }
 
-        private string GetTwitchChannelName(string twitchChannel)
+        private string GetTwitchChannelName(string twitchChannel, string clientId)
         {
             try
             {
-                var r = PluginUtils.DownloadWebPage("https://api.twitch.tv/kraken/channels/" + twitchChannel);
+                var h = new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(clientId))
+                    h.Add("Client-ID", clientId);
+
+                var r = PluginUtils.DownloadWebPage("https://api.twitch.tv/kraken/channels/" + twitchChannel, false, h);
                 if (r.Length > 0)
                 {
                     var tr = new JavaScriptSerializer().Deserialize<TwitchChannelsResponse>(r);
@@ -100,11 +128,15 @@ namespace PegBot.Plugins
             return null;
         }
 
-        private bool IsChannelOnline(string channel)
+        private bool IsChannelOnline(string channel, string clientId)
         {
             try
             {
-                var r = PluginUtils.DownloadWebPage("https://api.twitch.tv/kraken/streams?channel=" + channel);
+                var h = new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(clientId))
+                    h.Add("Client-ID", clientId);
+
+                var r = PluginUtils.DownloadWebPage("https://api.twitch.tv/kraken/streams?channel=" + channel, false, h);
                 if (r.Length > 0)
                 {
                     var tr = new JavaScriptSerializer().Deserialize<TwitchStreamsResponse>(r);
@@ -122,9 +154,9 @@ namespace PegBot.Plugins
 
             foreach (var ch in EnabledChannels)
             {
-                var s = GetSetting(ch) as List<string>;
+                var s = GetTwitchSetting(ch);
                 if (s != null)
-                    ChannelsToCheck.AddRange(s);
+                    ChannelsToCheck.AddRange(s.Channels);
             }
 
             return ChannelsToCheck.Distinct().ToList();
@@ -132,47 +164,45 @@ namespace PegBot.Plugins
 
         private void CheckChannelStatuses()
         {
-            List<string> ChannelsToCheck = GetChannelsToCheck();
-
-            if (ChannelsToCheck.Count() > 0)
+            var onlineChannels = new List<string>();
+            foreach (var ch in EnabledChannels)
             {
-                string url = "https://api.twitch.tv/kraken/streams?channel=" + string.Join(",", ChannelsToCheck);
-                try
+                var setting = GetTwitchSetting(ch);
+
+                if (setting.Channels.Count() > 0)
                 {
-                    var r = PluginUtils.DownloadWebPage(url);
-                    if (r.Length > 0)
+                    string url = "https://api.twitch.tv/kraken/streams?channel=" + string.Join(",", setting.Channels);
+                    try
                     {
-                        var tr = new JavaScriptSerializer().Deserialize<TwitchStreamsResponse>(r);
-                        if (tr.streams != null && tr.streams.Count() > 0)
+                        var h = new Dictionary<string, string>();
+                        if (!string.IsNullOrEmpty(setting.ClientId))
+                            h.Add("Client-ID", setting.ClientId);
+
+                        var r = PluginUtils.DownloadWebPage(url, false, h);
+                        if (r.Length > 0)
                         {
-                            foreach (var stream in tr.streams.Where(s => !OnlineChannels.Exists(c => c == s.channel.name)))
+                            var tr = new JavaScriptSerializer().Deserialize<TwitchStreamsResponse>(r);
+                            if (tr.streams != null && tr.streams.Count() > 0)
                             {
-                                foreach (string ch in EnabledChannels)
+                                foreach (var stream in tr.streams.Where(s => !OnlineChannels.Exists(c => c == s.channel.name)))
                                 {
                                     var channel = stream.channel;
                                     string status = string.IsNullOrEmpty(channel.status) ? "" : "/ '" + channel.status + "'";
                                     string chUrl = GetShortUrl(channel.url);
 
-                                    var setting = GetSetting(ch) as List<string>;
-                                    if (setting != null && setting.Contains(channel.name))
-                                    {
-                                        irc.SendMessage(SendType.Message, ch, string.Format("{3}{0}{3} is now live on Twitch / playing {4} {1} / {2}",
-                                            channel.name, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold, stream.game));
-                                    }
+                                    irc.SendMessage(SendType.Message, ch, string.Format("{3}{0}{3} is now live on Twitch / playing {4} {1} / {2}",
+                                        channel.name, status.Trim(), chUrl, PluginUtils.IrcConstants.IrcBold, stream.game));
                                 }
+
+                                onlineChannels.AddRange(tr.streams.Select(s => s.channel.name));
                             }
-
-                            OnlineChannels = tr.streams.Select(s => s.channel.name).ToList();
-                        }
-
-                        else if (OnlineChannels.Count() > 0)
-                        {
-                            OnlineChannels.Clear();
                         }
                     }
+                    catch { }
                 }
-                catch { }
             }
+
+            OnlineChannels = onlineChannels.Distinct().ToList();
         }
 
         private string GetShortUrl(string url)
@@ -188,6 +218,13 @@ namespace PegBot.Plugins
                 return shortUrl;
             }
             return url;
+        }
+
+        [Serializable]
+        protected class TwitchChannelSetting
+        {
+            public string ClientId;
+            public List<string> Channels = new List<string>();
         }
 
         #region Twitch JSON Classes
